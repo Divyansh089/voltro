@@ -1,18 +1,18 @@
-import phoneMint from "@/../public/assets/products/phone-mint.png";
-import phoneBlack from "@/../public/assets/products/phone-black.png";
-import headphonesNavy from "@/../public/assets/products/headphones-navy.png";
-import earbudsWhite from "@/../public/assets/products/earbuds-white.png";
-import earbudsBlack from "@/../public/assets/products/earbuds-black.png";
-import laptopSilver from "@/../public/assets/products/laptop-silver.png";
-import tablet from "@/../public/assets/products/tablet.png";
-import vr from "@/../public/assets/products/vr.png";
-import speaker from "@/../public/assets/products/speaker.png";
-import lamp from "@/../public/assets/products/lamp.png";
-import watch from "@/../public/assets/products/watch.png";
-import drone from "@/../public/assets/products/drone.png";
-import controller from "@/../public/assets/products/controller.png";
-import camera from "@/../public/assets/products/camera.png";
-import cable from "@/../public/assets/products/cable.png";
+const phoneMint = "/assets/products/phone-mint.png";
+const phoneBlack = "/assets/products/phone-black.png";
+const headphonesNavy = "/assets/products/headphones-navy.png";
+const earbudsWhite = "/assets/products/earbuds-white.png";
+const earbudsBlack = "/assets/products/earbuds-black.png";
+const laptopSilver = "/assets/products/laptop-silver.png";
+const tablet = "/assets/products/tablet.png";
+const vr = "/assets/products/vr.png";
+const speaker = "/assets/products/speaker.png";
+const lamp = "/assets/products/lamp.png";
+const watch = "/assets/products/watch.png";
+const drone = "/assets/products/drone.png";
+const controller = "/assets/products/controller.png";
+const camera = "/assets/products/camera.png";
+const cable = "/assets/products/cable.png";
 
 export const IMAGES = {
   phoneMint, phoneBlack, headphonesNavy, earbudsWhite, earbudsBlack,
