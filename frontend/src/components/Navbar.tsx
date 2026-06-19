@@ -1,28 +1,31 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { Search, ShoppingBag, Heart, Zap, User } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useAuth, useCart, useWishlist } from "@/lib/store";
 
 export function Navbar() {
-  const { location } = useRouterState();
-  const onAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dealer");
+  const router = useRouter();
+  const onAdmin = router.pathname.startsWith("/admin") || router.pathname.startsWith("/dealer");
   const { user } = useAuth();
   const cart = useCart();
   const wish = useWishlist();
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
 
   if (onAdmin) return null;
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/search", search: { q } });
+    router.push({
+      pathname: "/search",
+      query: { q },
+    });
   };
 
   return (
     <header className="sticky top-4 z-40 mx-auto w-full max-w-[1400px] px-4">
       <div className="glass flex items-center gap-3 px-4 py-2.5">
-        <Link to="/" className="flex items-center gap-2 pl-2 pr-4">
+        <Link href="/" className="flex items-center gap-2 pl-2 pr-4">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink text-white">
             <Zap size={16} strokeWidth={2} />
           </span>
@@ -50,13 +53,13 @@ export function Navbar() {
 
         <nav className="ml-auto hidden items-center gap-1 lg:flex">
           {[
-            { to: "/categories", label: "Categories" },
-            { to: "/admin/dashboard", label: "Admin" },
-            { to: "/dealer", label: "Dealer" },
+            { href: "/categories", label: "Categories" },
+            { href: "/admin/dashboard", label: "Admin" },
+            { href: "/dealer", label: "Dealer" },
           ].map((l) => (
             <Link
-              key={l.to}
-              to={l.to}
+              key={l.href}
+              href={l.href}
               className="rounded-full px-3 py-2 text-sm text-ink-soft transition hover:bg-white/60 hover:text-ink"
             >
               {l.label}
@@ -66,7 +69,7 @@ export function Navbar() {
 
         <div className="ml-2 flex items-center gap-2">
           <Link
-            to="/cart"
+            href="/cart"
             aria-label="Cart"
             className="relative grid h-10 w-10 place-items-center rounded-full bg-white/70 text-ink transition hover:bg-white"
           >
@@ -78,7 +81,7 @@ export function Navbar() {
             )}
           </Link>
           <Link
-            to="/wishlist"
+            href="/wishlist"
             aria-label="Wishlist"
             className="relative grid h-10 w-10 place-items-center rounded-full bg-white/70 text-ink transition hover:bg-white"
           >
@@ -92,7 +95,7 @@ export function Navbar() {
 
           {user ? (
             <Link
-              to="/profile"
+              href="/profile"
               className="flex items-center gap-2 rounded-full bg-white/80 py-1 pl-3 pr-1 text-sm font-medium text-ink"
             >
               <span className="hidden sm:inline">{user.name}</span>
@@ -102,7 +105,7 @@ export function Navbar() {
             </Link>
           ) : (
             <Link
-              to="/auth"
+              href="/auth"
               className="inline-flex items-center gap-2 rounded-full bg-ink py-2 pl-3 pr-4 text-sm font-medium text-white hover:bg-ink/90"
             >
               <User size={14} /> Sign in
