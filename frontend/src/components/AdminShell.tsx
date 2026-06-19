@@ -1,4 +1,5 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { LayoutDashboard, Activity, Users, Package, Settings, LogOut, Search, Bell, Zap } from "lucide-react";
 
 const ITEMS = [
@@ -9,15 +10,15 @@ const ITEMS = [
   { to: "/admin/dashboard", label: "Settings", icon: Settings },
 ] as const;
 
-export function AdminShell({ portal = "Admin" }: { portal?: string }) {
-  const { location } = useRouterState();
+export function AdminShell({ portal = "Admin", children }: { portal?: string; children?: React.ReactNode }) {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex max-w-[1500px] gap-5 px-4 pt-4 pb-10">
         {/* Sidebar */}
         <aside className="glass sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col p-5 lg:flex">
-          <Link to="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
               <Zap size={16} strokeWidth={2} />
             </span>
@@ -29,11 +30,11 @@ export function AdminShell({ portal = "Admin" }: { portal?: string }) {
 
           <nav className="mt-8 space-y-1">
             {ITEMS.map((it, i) => {
-              const active = location.pathname === it.to;
+              const active = router.pathname === it.to;
               return (
                 <Link
                   key={i}
-                  to={it.to}
+                  href={it.to}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
                     active ? "bg-ink text-white" : "text-ink-soft hover:bg-white/60 hover:text-ink"
                   }`}
@@ -53,7 +54,7 @@ export function AdminShell({ portal = "Admin" }: { portal?: string }) {
             </button>
           </div>
 
-          <Link to="/" className="mt-4 inline-flex items-center gap-2 px-3 py-2 text-xs text-ink-soft hover:text-ink">
+          <Link href="/" className="mt-4 inline-flex items-center gap-2 px-3 py-2 text-xs text-ink-soft hover:text-ink">
             <LogOut size={14} /> Exit portal
           </Link>
         </aside>
@@ -81,7 +82,7 @@ export function AdminShell({ portal = "Admin" }: { portal?: string }) {
           </header>
 
           <main className="flex-1">
-            <Outlet />
+            {children}
           </main>
         </div>
       </div>
