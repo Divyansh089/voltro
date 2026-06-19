@@ -1,8 +1,8 @@
-import { useRouterState } from "@tanstack/react-router";
+import { useRouter } from "next/router";
 
 export function Footer() {
-  const { location } = useRouterState();
-  if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/dealer")) return null;
+  const router = useRouter();
+  if (router.pathname.startsWith("/admin") || router.pathname.startsWith("/dealer")) return null;
 
   return (
     <footer className="mx-auto mt-16 w-full max-w-[1400px] px-4 pb-10">
