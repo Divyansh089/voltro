@@ -13,17 +13,23 @@ export class AnalyticsService {
 
     const [
       totalUsers,
+      totalCustomers,
+      totalStaff,
+      totalAdmins,
       newUsers,
       totalOrders,
       totalRevenue,
       recentOrders,
       topProducts
     ] = await prisma.$transaction([
-      prisma.user.count({ where: { role: { name: 'Customer' } } }),
+      prisma.user.count(),
+      prisma.user.count({ where: { role: { name: 'CUSTOMER' } } }),
+      prisma.user.count({ where: { role: { name: { in: ['PRODUCT_MANAGER', 'CUSTOMER_SUPPORT'] } } } }),
+      prisma.user.count({ where: { role: { name: { in: ['ADMIN', 'SUPER_ADMIN'] } } } }),
       
       prisma.user.count({
         where: {
-          role: { name: 'Customer' },
+          role: { name: 'CUSTOMER' },
           ...(hasDateFilter && { createdAt: dateFilter })
         }
       }),
@@ -65,6 +71,9 @@ export class AnalyticsService {
     return {
       overview: {
         totalUsers,
+        totalCustomers,
+        totalStaff,
+        totalAdmins,
         newUsers,
         totalOrders,
         totalRevenue: totalRevenue._sum.total || 0,
@@ -115,5 +124,79 @@ export class AnalyticsService {
       date,
       revenue: grouped[date]
     }));
+  }
+
+  /**
+   * Get product-focused dashboard metrics for Product Managers
+   */
+  static async getProductDashboardMetrics(startDate?: Date, endDate?: Date) {
+    const dateFilter = {
+      ...(startDate && { gte: startDate }),
+      ...(endDate && { lte: endDate }),
+    };
+    const hasDateFilter = startDate || endDate;
+
+    const [
+      totalProducts,
+      totalCategories,
+      topProducts,
+      productsByCategory,
+      lowStockResult
+    ] = await prisma.$transaction([
+      prisma.product.count({
+        where: { ...(hasDateFilter && { createdAt: dateFilter }) }
+      }),
+
+      prisma.category.count(),
+
+      prisma.orderItem.groupBy({
+        by: ['productName'],
+        _sum: { quantity: true, totalPrice: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 10,
+        where: {
+          order: {
+            status: { not: 'CANCELLED' },
+            ...(hasDateFilter && { createdAt: dateFilter })
+          }
+        }
+      }),
+
+      prisma.product.groupBy({
+        by: ['categoryId'],
+        _count: { id: true },
+        where: { ...(hasDateFilter && { createdAt: dateFilter }) }
+      }),
+
+      prisma.$queryRaw<{count: number}[]>`
+        SELECT CAST(COUNT(*) AS INTEGER) as count 
+        FROM inventory 
+        WHERE quantity <= low_stock_threshold
+      `
+    ]);
+
+    // Fetch categories to map the names
+    const categories = await prisma.category.findMany({ select: { id: true, name: true } });
+    const categoryMap = categories.reduce((acc: any, cat) => {
+      acc[cat.id] = cat.name;
+      return acc;
+    }, {});
+
+    return {
+      overview: {
+        totalProducts,
+        totalCategories,
+        lowStockVariants: Number(lowStockResult[0]?.count || 0)
+      },
+      topProducts: topProducts.map((p: any) => ({
+        name: p.productName,
+        sold: p._sum.quantity,
+        revenue: p._sum.totalPrice
+      })),
+      productsByCategory: productsByCategory.map((p: any) => ({
+        categoryName: categoryMap[p.categoryId] || 'Unknown',
+        count: p._count.id
+      }))
+    };
   }
 }

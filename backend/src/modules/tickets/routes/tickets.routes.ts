@@ -42,21 +42,21 @@ router.post(
 
 router.get(
   '/',
-  permission('support:read'),
+  permission('ticket:read'),
   validate(ticketQuerySchema, 'query'),
   asyncHandler(TicketsController.adminFindAll)
 );
 
 router.get(
   '/:id',
-  permission('support:read'),
+  permission('ticket:read'),
   validate(idParamSchema, 'params'),
   asyncHandler(TicketsController.adminFindById)
 );
 
 router.patch(
   '/:id',
-  permission('support:update'),
+  permission('ticket:reply'),
   validate(idParamSchema, 'params'),
   validate(updateTicketSchema, 'body'),
   asyncHandler(TicketsController.updateTicket)
@@ -64,7 +64,7 @@ router.patch(
 
 router.post(
   '/:id/messages',
-  permission('support:update'),
+  permission('ticket:reply'),
   validate(idParamSchema, 'params'),
   validate(addMessageSchema, 'body'),
   asyncHandler(TicketsController.adminAddMessage)

@@ -78,7 +78,7 @@ export class UsersService {
           createdAt: true,
           role: { select: { id: true, name: true } },
           customerProfile: { select: { firstName: true, lastName: true } },
-          staffProfile: { select: { employeeId: true } },
+          staffProfile: { select: { firstName: true, lastName: true, phone: true } },
         },
       }),
     ]);

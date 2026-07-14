@@ -22,8 +22,13 @@ export function validate(schema: ZodSchema, source: ValidationSource = 'body') {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const result = schema.parse(req[source]);
-      // Replace with validated & transformed data
-      (req as any)[source] = result;
+      // Replace with validated & transformed data safely (bypassing getter-only properties)
+      Object.defineProperty(req, source, {
+        value: result,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
       next();
     } catch (error) {
       if (error instanceof ZodError) {

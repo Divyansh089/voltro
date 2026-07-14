@@ -18,10 +18,19 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
-  "keywords": ["voltra", "d2c", "electronics", "api"],
+  "keywords": [
+    "voltra",
+    "d2c",
+    "electronics",
+    "api"
+  ],
   "author": "Voltra Engineering",
   "license": "UNLICENSED",
   "private": true,
+  "prisma": {
+    "schema": "src/prisma/schema.prisma",
+    "seed": "tsx src/prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^6.9.0",
     "bcryptjs": "^2.4.3",
@@ -47,6 +56,7 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
+    "@prisma/config": "^7.8.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.18",
@@ -58,7 +68,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
-    "prisma": "^6.9.0",
+    "prisma": "^6.19.3",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   },
