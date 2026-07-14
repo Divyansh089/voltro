@@ -33,7 +33,7 @@ export const paginationSchema = z.object({
 });
 
 export const sortSchema = z.object({
-  sortBy: z.string().default('created_at'),
+  sortBy: z.string().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 

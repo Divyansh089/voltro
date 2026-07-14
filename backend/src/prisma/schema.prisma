@@ -58,6 +58,7 @@ model Role {
   // Relations
   users           User[]
   rolePermissions RolePermission[]
+  staffProfiles   StaffProfile[]
 
   @@map("roles")
 }
@@ -107,16 +108,18 @@ model CustomerProfile {
 }
 
 model StaffProfile {
-  id         String   @id @default(uuid())
-  userId     String   @unique @map("user_id")
-  employeeId String   @unique @map("employee_id")
-  department String
-  position   String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  roleId    String   @map("role_id")
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String   @unique @map("user_id")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id])
 
   @@map("staff_profiles")
 }

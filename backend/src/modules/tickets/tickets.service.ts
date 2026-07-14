@@ -32,10 +32,10 @@ export class TicketsService {
       ...(userId && { userId }),
       ...(status && { status }),
       ...(priority && { priority }),
-      ...(assignedToId && { assignedToId }),
+      ...(assignedToId && { assignedTo: assignedToId }),
       ...(search && {
         OR: [
-          { ticketNumber: { contains: search, mode: 'insensitive' } },
+          { id: { contains: search, mode: 'insensitive' } },
           { subject: { contains: search, mode: 'insensitive' } },
         ],
       }),
@@ -50,8 +50,7 @@ export class TicketsService {
         orderBy: { [sortBy]: sortOrder },
         include: {
           user: { select: { email: true, customerProfile: { select: { firstName: true, lastName: true } } } },
-          assignedTo: { select: { email: true } },
-          _count: { select: { messages: true } },
+          _count: { select: { replies: true } },
         },
       }),
     ]);
@@ -67,10 +66,9 @@ export class TicketsService {
       where: { id },
       include: {
         user: { select: { email: true, customerProfile: { select: { firstName: true, lastName: true } } } },
-        assignedTo: { select: { email: true } },
-        messages: {
+        replies: {
           orderBy: { createdAt: 'asc' },
-          include: { sender: { select: { id: true, email: true } } }
+          include: { user: { select: { id: true, email: true } } }
         }
       }
     });
@@ -85,20 +83,51 @@ export class TicketsService {
    * Create ticket (Customer)
    */
   static async create(userId: string, data: { subject: string; description: string; priority?: string; orderId?: string }, ipAddress?: string, userAgent?: string) {
-    const ticketNumber = generateTicketNumber();
-
     const ticket = await prisma.$transaction(async (tx: any) => {
+      
+      // Auto-Assignment Logic: Find Support Staff with fewest open tickets
+      const supportAgents = await tx.user.findMany({
+        where: { role: { name: 'CUSTOMER_SUPPORT' } },
+        select: { id: true }
+      });
+
+      let assignedTo: string | undefined = undefined;
+      
+      if (supportAgents.length > 0) {
+        const agentIds = supportAgents.map((a: any) => a.id);
+        
+        const ticketCounts = await tx.supportTicket.groupBy({
+          by: ['assignedTo'],
+          where: {
+            assignedTo: { in: agentIds },
+            status: { in: ['OPEN', 'IN_PROGRESS'] }
+          },
+          _count: { id: true }
+        });
+
+        // Map load counts to all eligible agents (handles agents with 0 tickets)
+        const agentLoad = agentIds.map((id: string) => {
+          const record = ticketCounts.find((t: any) => t.assignedTo === id);
+          return { id, count: record ? record._count.id : 0 };
+        });
+
+        // Pick the agent with the lowest count
+        agentLoad.sort((a: any, b: any) => a.count - b.count);
+        assignedTo = agentLoad[0].id;
+      }
+
       const created = await tx.supportTicket.create({
         data: {
-          ticketNumber,
           userId,
+          category: 'GENERAL',
           subject: data.subject,
           status: 'OPEN',
           priority: data.priority || 'LOW',
           orderId: data.orderId,
-          messages: {
+          ...(assignedTo && { assignedTo }),
+          replies: {
             create: {
-              senderId: userId,
+              userId,
               message: data.description,
             }
           }
@@ -138,11 +167,12 @@ export class TicketsService {
     }
 
     const newMessage = await prisma.$transaction(async (tx: any) => {
-      const created = await tx.ticketMessage.create({
+      const created = await tx.supportReply.create({
         data: {
           ticketId,
-          senderId,
+          userId: senderId,
           message,
+          isStaffReply: isAdmin,
         }
       });
 
@@ -175,10 +205,16 @@ export class TicketsService {
     const ticket = await prisma.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new NotFoundError('Ticket', id);
 
+    const { assignedToId, ...restData } = data;
+    const updateData = {
+      ...restData,
+      ...(assignedToId !== undefined && { assignedTo: assignedToId })
+    };
+
     const updated = await prisma.$transaction(async (tx: any) => {
       const result = await tx.supportTicket.update({
         where: { id },
-        data,
+        data: updateData,
       });
 
       await tx.auditLog.create({
@@ -187,8 +223,8 @@ export class TicketsService {
           action: 'TICKET_UPDATED',
           resource: 'support_ticket',
           resourceId: id,
-          oldValues: { status: ticket.status, priority: ticket.priority, assignedToId: ticket.assignedToId },
-          newValues: data as any,
+          oldValues: { status: ticket.status, priority: ticket.priority, assignedTo: ticket.assignedTo },
+          newValues: updateData as any,
           ipAddress,
           userAgent,
         }
