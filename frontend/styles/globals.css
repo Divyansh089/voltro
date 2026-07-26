@@ -50,60 +50,60 @@
 
 :root {
   --background: oklch(0.97 0.02 165);
-  --foreground: oklch(0.20 0.03 250);
+  --foreground: oklch(0.2 0.03 250);
 
   /* Mint -> cool-white canvas */
-  --bg-gradient-start: #E8F5F1;
-  --bg-gradient-end: #F4F7F6;
+  --bg-gradient-start: #e8f5f1;
+  --bg-gradient-end: #f4f7f6;
 
-  --text-primary: #0F172A;
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  --text-muted: #94a3b8;
 
-  --accent-neon: #CCFF00;
-  --accent-neon-hover: #B8E600;
-  --accent-blue: #2563EB;
+  --accent-neon: #ccff00;
+  --accent-neon-hover: #b8e600;
+  --accent-blue: #2563eb;
 
   --glass-bg: rgba(255, 255, 255, 0.45);
   --glass-border: rgba(255, 255, 255, 0.65);
   --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.06);
 
   --card: rgba(255, 255, 255, 0.55);
-  --card-foreground: #0F172A;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0F172A;
+  --popover-foreground: #0f172a;
 
-  --primary: #0F172A;
+  --primary: #0f172a;
   --primary-foreground: #ffffff;
   --secondary: rgba(255, 255, 255, 0.65);
-  --secondary-foreground: #0F172A;
+  --secondary-foreground: #0f172a;
 
   --muted: rgba(255, 255, 255, 0.5);
   --muted-foreground: #475569;
-  --accent: #CCFF00;
-  --accent-foreground: #0F172A;
+  --accent: #ccff00;
+  --accent-foreground: #0f172a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
   --border: rgba(15, 23, 42, 0.08);
   --input: rgba(15, 23, 42, 0.12);
-  --ring: #CCFF00;
+  --ring: #ccff00;
 
-  --panel: #0B1220;
-  --panel-foreground: #E2E8F0;
+  --panel: #0b1220;
+  --panel-foreground: #e2e8f0;
 
   --radius: 24px;
 }
 
 .dark {
-  --background: #0B1220;
-  --foreground: #E2E8F0;
+  --background: #0b1220;
+  --foreground: #e2e8f0;
   --card: rgba(255, 255, 255, 0.04);
-  --card-foreground: #E2E8F0;
+  --card-foreground: #e2e8f0;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
   --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: #94A3B8;
+  --muted-foreground: #94a3b8;
 }
 
 @layer base {
@@ -111,7 +111,8 @@
     border-color: var(--color-border);
   }
 
-  html, body {
+  html,
+  body {
     font-family: var(--font-sans);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
@@ -120,14 +121,18 @@
   body {
     min-height: 100vh;
     background:
-      radial-gradient(1200px 600px at 0% 0%, #E8F5F1 0%, transparent 60%),
-      radial-gradient(1000px 700px at 100% 100%, #DDE9E5 0%, transparent 55%),
+      radial-gradient(1200px 600px at 0% 0%, #e8f5f1 0%, transparent 60%),
+      radial-gradient(1000px 700px at 100% 100%, #dde9e5 0%, transparent 55%),
       linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     background-attachment: fixed;
     color: var(--text-primary);
   }
 
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
@@ -150,8 +155,8 @@
     border-radius: 20px;
   }
   .panel-dark {
-    background: linear-gradient(180deg, #0B1220 0%, #0E1628 100%);
-    color: #E2E8F0;
+    background: linear-gradient(180deg, #0b1220 0%, #0e1628 100%);
+    color: #e2e8f0;
   }
   .glass-dark {
     background: rgba(255, 255, 255, 0.04);
@@ -164,26 +169,36 @@
     color: var(--text-primary);
     border-radius: 999px;
     font-weight: 600;
-    transition: background-color .2s ease, transform .15s ease;
+    transition:
+      background-color 0.2s ease,
+      transform 0.15s ease;
   }
-  .btn-neon:hover { background: var(--accent-neon-hover); }
+  .btn-neon:hover {
+    background: var(--accent-neon-hover);
+  }
   .btn-ink {
-    background: #0F172A;
+    background: #0f172a;
     color: #fff;
     border-radius: 999px;
   }
   .chip {
     border-radius: 999px;
     padding: 6px 12px;
-    background: rgba(255,255,255,0.6);
-    border: 1px solid rgba(15,23,42,0.06);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(15, 23, 42, 0.06);
     font-size: 12px;
     color: var(--text-secondary);
   }
 }
 
 @layer utilities {
-  .text-ink { color: var(--text-primary); }
-  .text-ink-soft { color: var(--text-secondary); }
-  .text-ink-muted { color: var(--text-muted); }
+  .text-ink {
+    color: var(--text-primary);
+  }
+  .text-ink-soft {
+    color: var(--text-secondary);
+  }
+  .text-ink-muted {
+    color: var(--text-muted);
+  }
 }
