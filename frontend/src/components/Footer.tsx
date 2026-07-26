@@ -16,11 +16,21 @@ export function Footer() {
           </p>
         </div>
         <div className="flex flex-wrap gap-6 text-sm text-ink-soft">
-          <a href="#" className="hover:text-ink">About</a>
-          <a href="#" className="hover:text-ink">Press</a>
-          <a href="#" className="hover:text-ink">Careers</a>
-          <a href="#" className="hover:text-ink">Privacy</a>
-          <a href="#" className="hover:text-ink">Terms</a>
+          <a href="#" className="hover:text-ink">
+            About
+          </a>
+          <a href="#" className="hover:text-ink">
+            Press
+          </a>
+          <a href="#" className="hover:text-ink">
+            Careers
+          </a>
+          <a href="#" className="hover:text-ink">
+            Privacy
+          </a>
+          <a href="#" className="hover:text-ink">
+            Terms
+          </a>
         </div>
         <div className="text-xs text-ink-muted">© 2026 Voltra Inc.</div>
       </div>
