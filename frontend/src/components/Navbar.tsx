@@ -2,17 +2,24 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { Search, ShoppingBag, Heart, Zap, User } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { useAuth, useCart, useWishlist } from "@/lib/store";
+import { useAuth } from "@/providers/AuthProvider";
+import { useCart } from "@/store/cart.store";
+import { useWishlist } from "@/store/wishlist.store";
 
 export function Navbar() {
   const router = useRouter();
-  const onAdmin = router.pathname.startsWith("/admin") || router.pathname.startsWith("/dealer");
+  const onStaff = router.pathname.startsWith("/staff");
   const { user } = useAuth();
+  const displayName = user
+    ? user.firstName
+      ? `${user.firstName} ${user.lastName ?? ""}`.trim()
+      : user.email.split("@")[0]
+    : "";
   const cart = useCart();
   const wish = useWishlist();
   const [q, setQ] = useState("");
 
-  if (onAdmin) return null;
+  if (onStaff) return null;
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -52,19 +59,12 @@ export function Navbar() {
         </form>
 
         <nav className="ml-auto hidden items-center gap-1 lg:flex">
-          {[
-            { href: "/categories", label: "Categories" },
-            { href: "/admin/dashboard", label: "Admin" },
-            { href: "/dealer", label: "Dealer" },
-          ].map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="rounded-full px-3 py-2 text-sm text-ink-soft transition hover:bg-white/60 hover:text-ink"
-            >
-              {l.label}
-            </Link>
-          ))}
+          <Link
+            href="/categories"
+            className="rounded-full px-3 py-2 text-sm text-ink-soft transition hover:bg-white/60 hover:text-ink"
+          >
+            Categories
+          </Link>
         </nav>
 
         <div className="ml-2 flex items-center gap-2">
@@ -95,17 +95,17 @@ export function Navbar() {
 
           {user ? (
             <Link
-              href="/profile"
+              href="/customer/profile"
               className="flex items-center gap-2 rounded-full bg-white/80 py-1 pl-3 pr-1 text-sm font-medium text-ink"
             >
-              <span className="hidden sm:inline">{user.name}</span>
+              <span className="hidden sm:inline">{displayName}</span>
               <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[#FCD9B6] to-[#3B2A20] text-xs text-white">
-                {user.name[0]?.toUpperCase()}
+                {displayName[0]?.toUpperCase()}
               </span>
             </Link>
           ) : (
             <Link
-              href="/auth"
+              href="/auth/login"
               className="inline-flex items-center gap-2 rounded-full bg-ink py-2 pl-3 pr-4 text-sm font-medium text-white hover:bg-ink/90"
             >
               <User size={14} /> Sign in

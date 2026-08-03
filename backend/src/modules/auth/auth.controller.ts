@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { sendSuccess } from '../../common/responses';
 import { HttpStatus } from '../../common/enums/httpStatus.enum';
 import { env } from '../../config/env';
@@ -106,12 +107,13 @@ export class AuthController {
   static async me(req: Request, res: Response) {
     const user = (req as any).user;
     
-    // Send basic info, this would ideally call a UserService to fetch full profile
+    // Fetch full profile from DB
+    const fullProfile = await UsersService.findById(user.userId);
+
     res.status(HttpStatus.OK).json(
       sendSuccess({
-        id: user.userId,
-        role: user.role,
-        sessionId: user.sessionId,
+        ...fullProfile,
+        sessionId: user.sessionId, // Keep sessionId in the response
       }, 'Current user profile')
     );
   }

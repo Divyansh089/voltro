@@ -21,4 +21,13 @@ export class AnalyticsController {
     const data = await AnalyticsService.getSalesChart(startDate, endDate);
     res.status(HttpStatus.OK).json(sendSuccess(data));
   }
+
+  static async getProductDashboard(req: Request, res: Response) {
+    const query = req.query as any;
+    const startDate = query.startDate ? new Date(query.startDate) : undefined;
+    const endDate = query.endDate ? new Date(query.endDate) : undefined;
+
+    const data = await AnalyticsService.getProductDashboardMetrics(startDate, endDate);
+    res.status(HttpStatus.OK).json(sendSuccess(data));
+  }
 }
