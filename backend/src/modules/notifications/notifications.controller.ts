@@ -37,7 +37,7 @@ export class NotificationsController {
 
   static async delete(req: Request, res: Response) {
     const userId = (req as any).user.userId;
-    await NotificationsService.delete(req.params.id, userId);
+    await NotificationsService.delete(req.params.id as string, userId);
     res.status(HttpStatus.NO_CONTENT).send();
   }
 }

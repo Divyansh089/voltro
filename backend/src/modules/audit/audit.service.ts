@@ -43,7 +43,7 @@ export class AuditService {
         orderBy: { [sortBy]: sortOrder },
         include: {
           user: {
-            select: { email: true, customerProfile: { select: { firstName: true, lastName: true } }, staffProfile: { select: { employeeId: true } } }
+            select: { email: true, customerProfile: { select: { firstName: true, lastName: true } }, staffProfile: { select: { id: true, firstName: true, lastName: true } } }
           }
         }
       }),
