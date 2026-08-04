@@ -108,7 +108,17 @@ export class AuthService {
     // 1. Find user by email
     const user = await prisma.user.findUnique({
       where: { email: data.email },
-      include: { role: true },
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || !user.isActive) {
@@ -191,12 +201,15 @@ export class AuthService {
 
     log.info({ userId: user.id, sessionId }, 'User logged in');
 
+    const permissions = user.role.rolePermissions.map((rp) => rp.permission.name);
+
     return {
       user: {
         id: user.id,
         email: user.email,
         role: user.role.name,
         avatarUrl: user.avatarUrl,
+        permissions,
       },
       accessToken,
       refreshToken,
