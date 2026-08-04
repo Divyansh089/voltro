@@ -30,4 +30,10 @@ export class AnalyticsController {
     const data = await AnalyticsService.getProductDashboardMetrics(startDate, endDate);
     res.status(HttpStatus.OK).json(sendSuccess(data));
   }
+
+  static async getSupportDashboard(req: Request, res: Response) {
+    const user = (req as any).user;
+    const data = await AnalyticsService.getSupportMetrics(user?.userId);
+    res.status(HttpStatus.OK).json(sendSuccess(data));
+  }
 }

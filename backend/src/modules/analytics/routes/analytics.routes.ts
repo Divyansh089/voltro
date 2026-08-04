@@ -43,4 +43,10 @@ router.get(
   asyncHandler(AnalyticsController.getProductDashboard)
 );
 
+router.get(
+  '/support-dashboard',
+  permission('ticket:read'),
+  asyncHandler(AnalyticsController.getSupportDashboard)
+);
+
 export default router;

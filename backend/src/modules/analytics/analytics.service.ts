@@ -199,4 +199,53 @@ export class AnalyticsService {
       }))
     };
   }
+
+  /**
+   * Get support dashboard metrics
+   */
+  static async getSupportMetrics(userId: string) {
+    const [
+      totalOpenTickets,
+      unassignedTickets,
+      myOpenTickets,
+      recentTickets
+    ] = await prisma.$transaction([
+      prisma.supportTicket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
+      prisma.supportTicket.count({ where: { status: 'OPEN', assignedTo: null } }),
+      prisma.supportTicket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] }, assignedTo: userId } }),
+      prisma.supportTicket.findMany({
+        take: 5,
+        orderBy: { updatedAt: 'desc' },
+        where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+        include: { user: { select: { email: true } } }
+      })
+    ]);
+
+    // Calculate SLA breaches (open for more than 24h)
+    const slaDate = new Date();
+    slaDate.setHours(slaDate.getHours() - 24);
+    const slaBreaches = await prisma.supportTicket.count({
+      where: {
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        createdAt: { lt: slaDate }
+      }
+    });
+
+    return {
+      overview: {
+        totalOpenTickets,
+        unassignedTickets,
+        myOpenTickets,
+        slaBreaches
+      },
+      recentTickets: recentTickets.map((t: any) => ({
+        id: t.id,
+        subject: t.subject,
+        status: t.status,
+        customerEmail: t.user?.email || 'Unknown',
+        assignedTo: t.assignedTo || 'Unassigned',
+        updatedAt: t.updatedAt
+      }))
+    };
+  }
 }
