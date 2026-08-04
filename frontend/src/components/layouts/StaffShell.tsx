@@ -39,10 +39,15 @@ export function StaffShell({ children }: { children?: React.ReactNode }) {
   const router = useRouter();
   const { user, permissions, logout } = useAuth();
 
-  // Filter sidebar items based on user permissions
-  const visibleItems = ALL_SIDEBAR_ITEMS.filter(
-    (item) => item.permission === null || permissions.includes(item.permission),
-  );
+  // Filter sidebar items based on user permissions and roles
+  const visibleItems = ALL_SIDEBAR_ITEMS.filter((item) => {
+    if (item.permission !== null && !permissions.includes(item.permission)) return false;
+    // Product Managers only care about supply/inventory, hide analytics and users
+    if (user?.role === "PRODUCT_MANAGER" && (item.label === "Analytics" || item.label === "Users")) {
+      return false;
+    }
+    return true;
+  });
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ""}`.trim()
