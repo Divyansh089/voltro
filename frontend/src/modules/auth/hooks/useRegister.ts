@@ -12,9 +12,9 @@ export function useRegister() {
   return useMutation({
     mutationFn: (data: RegisterRequest) => registerUser(data),
     onSuccess: (res) => {
-      const { token, user } = res.data;
+      const { accessToken, user } = res.data;
       login(
-        token,
+        accessToken,
         {
           id: user.id,
           email: user.email,

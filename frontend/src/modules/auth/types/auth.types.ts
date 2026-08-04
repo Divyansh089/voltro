@@ -13,7 +13,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   success: boolean;
   data: {
-    token: string;
+    accessToken: string;
     user: {
       id: string;
       email: string;

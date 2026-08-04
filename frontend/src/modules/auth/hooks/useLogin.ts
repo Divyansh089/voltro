@@ -13,9 +13,9 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => loginUser(data),
     onSuccess: (res) => {
-      const { token, user } = res.data;
+      const { accessToken, user } = res.data;
       login(
-        token,
+        accessToken,
         {
           id: user.id,
           email: user.email,
