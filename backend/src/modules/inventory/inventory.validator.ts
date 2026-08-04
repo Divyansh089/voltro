@@ -12,6 +12,7 @@ export const adjustInventorySchema = z.object({
 });
 
 export const inventoryQuerySchema = paginationSchema.merge(sortSchema).extend({
+  sortBy: z.string().default('updatedAt'),
   variantId: uuidSchema.optional(),
   productId: uuidSchema.optional(),
   lowStockOnly: z.enum(['true', 'false']).optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
