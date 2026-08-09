@@ -56,6 +56,8 @@ export class AuthService {
             create: {
               firstName: data.firstName,
               lastName: data.lastName,
+              phone: data.phone,
+              dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
             },
           },
         },
@@ -82,22 +84,49 @@ export class AuthService {
 
     log.info({ userId: user.id }, 'New user registered');
 
-    // 5. TODO: Send welcome/verification email
+    // 5. Generate session ID and tokens for automatic login
+    const sessionId = uuidv4();
+    const { accessToken, refreshToken } = this.generateTokens(user.id, sessionId, user.role.name);
+    const hashedRefreshToken = await hashPassword(refreshToken);
 
-    // 6. Return user details without password hash
+    await prisma.session.create({
+      data: {
+        id: sessionId,
+        userId: user.id,
+        refreshToken: hashedRefreshToken,
+        ipAddress,
+        userAgent,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await CacheService.set(
+      CacheKeys.session(sessionId),
+      { userId: user.id, role: user.role.name },
+      TTL.SESSION
+    );
+
     return {
-      id: user.id,
-      email: user.email,
-      role: user.role.name,
-      firstName: user.customerProfile?.firstName,
-      lastName: user.customerProfile?.lastName,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role.name,
+        avatarUrl: user.avatarUrl,
+        permissions: [],
+        customerProfile: user.customerProfile ? {
+          firstName: user.customerProfile.firstName,
+          lastName: user.customerProfile.lastName,
+        } : undefined,
+      },
+      accessToken,
+      refreshToken,
     };
   }
 
   /**
    * Login user and generate tokens.
    */
-  static async login(data: LoginInput, ipAddress?: string, userAgent?: string) {
+  static async login(data: LoginInput & { rememberMe?: boolean }, ipAddress?: string, userAgent?: string) {
     const loginAttemptsKey = CacheKeys.loginAttempts(data.email);
     const attempts = (await CacheService.get<number>(loginAttemptsKey)) || 0;
 
@@ -118,6 +147,8 @@ export class AuthService {
             },
           },
         },
+        customerProfile: true,
+        staffProfile: true,
       },
     });
 
@@ -148,8 +179,9 @@ export class AuthService {
     await CacheService.del(loginAttemptsKey);
 
     // 3. Generate session ID and tokens
+    const isRememberMe = Boolean(data.rememberMe);
     const sessionId = uuidv4();
-    const { accessToken, refreshToken } = this.generateTokens(user.id, sessionId, user.role.name);
+    const { accessToken, refreshToken } = this.generateTokens(user.id, sessionId, user.role.name, isRememberMe);
 
     // 4. Save session in DB and Redis
     const hashedRefreshToken = await hashPassword(refreshToken); // Store hashed refresh token in DB
@@ -170,6 +202,8 @@ export class AuthService {
       }
     }
 
+    const sessionDurationMs = isRememberMe ? (2 * 24 * 60 * 60 * 1000) : (3 * 60 * 60 * 1000); // 2 days if rememberMe, 3 hours general
+
     await prisma.$transaction([
       prisma.session.create({
         data: {
@@ -178,7 +212,7 @@ export class AuthService {
           refreshToken: hashedRefreshToken,
           ipAddress,
           userAgent,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: new Date(Date.now() + sessionDurationMs),
         },
       }),
       prisma.auditLog.create({
@@ -210,6 +244,16 @@ export class AuthService {
         role: user.role.name,
         avatarUrl: user.avatarUrl,
         permissions,
+        customerProfile: user.customerProfile ? {
+          firstName: user.customerProfile.firstName,
+          lastName: user.customerProfile.lastName,
+          phone: user.customerProfile.phone,
+        } : undefined,
+        staffProfile: user.staffProfile ? {
+          firstName: user.staffProfile.firstName,
+          lastName: user.staffProfile.lastName,
+          phone: user.staffProfile.phone,
+        } : undefined,
       },
       accessToken,
       refreshToken,
@@ -330,15 +374,18 @@ export class AuthService {
   /**
    * Helper: Generate access and refresh tokens.
    */
-  private static generateTokens(userId: string, sessionId: string, role: string) {
+  private static generateTokens(userId: string, sessionId: string, role: string, rememberMe = false) {
     const payload = { userId, sessionId, role };
 
+    const accessExpiry = rememberMe ? '2d' : (env.JWT_ACCESS_EXPIRY || '3h');
+    const refreshExpiry = rememberMe ? '30d' : (env.JWT_REFRESH_EXPIRY || '7d');
+
     const accessToken = jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRY as any,
+      expiresIn: accessExpiry as any,
     });
 
     const refreshToken = jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-      expiresIn: env.JWT_REFRESH_EXPIRY as any,
+      expiresIn: refreshExpiry as any,
     });
 
     return { accessToken, refreshToken };
