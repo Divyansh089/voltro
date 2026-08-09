@@ -176,6 +176,7 @@ model Category {
   parentId    String?   @map("parent_id")
   sortOrder   Int       @default(0) @map("sort_order")
   isActive    Boolean   @default(true) @map("is_active")
+  hasVariants Boolean   @default(true) @map("has_variants")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -206,13 +207,14 @@ model Product {
   deletedAt     DateTime? @map("deleted_at")
 
   // Relations
-  category       Category               @relation(fields: [categoryId], references: [id])
-  variants       Variant[]
-  images         ProductImage[]
-  specifications ProductSpecification[]
-  reviews        Review[]
-  wishlistItems  WishlistItem[]
-  homepageBanners HomepageBanner[]
+  category         Category               @relation(fields: [categoryId], references: [id])
+  options          ProductOption[]
+  variants         Variant[]
+  images           ProductImage[]
+  specifications   ProductSpecification[]
+  reviews          Review[]
+  wishlistItems    WishlistItem[]
+  homepageBanners  HomepageBanner[]
   featuredProducts FeaturedProduct[]
 
   @@index([categoryId])
@@ -226,22 +228,65 @@ model Variant {
   productId String   @map("product_id")
   sku       String   @unique
   name      String
-  color     String?
-  storage   String?
-  size      String?
-  price     Decimal? @db.Decimal(10, 2)
+  price     Decimal  @db.Decimal(10, 2)
+  isDefault Boolean  @default(false) @map("is_default")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inventory  Inventory?
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  product      Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  optionValues VariantOptionValue[]
+  inventory    Inventory?
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
 
   @@index([productId])
   @@map("variants")
+}
+
+// ── Product Options (flexible variant dimensions) ─────────────
+
+model ProductOption {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  name      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@index([productId])
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id         String   @id @default(uuid())
+  optionId   String   @map("option_id")
+  value      String
+  priceDelta Decimal  @default(0.00) @map("price_delta") @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  option         ProductOption       @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variantOptions VariantOptionValue[]
+
+  @@index([optionId])
+  @@map("product_option_values")
+}
+
+model VariantOptionValue {
+  variantId      String @map("variant_id")
+  optionValueId  String @map("option_value_id")
+
+  // Relations
+  variant     Variant            @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, optionValueId])
+  @@map("variant_option_values")
 }
 
 model ProductImage {
