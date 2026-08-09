@@ -92,4 +92,20 @@ export class CloudinaryService {
       ],
     });
   }
+
+  /**
+   * Helper to extract public ID from Cloudinary URL.
+   */
+  static extractPublicId(url: string): string | null {
+    try {
+      const parts = url.split('/upload/');
+      if (parts.length < 2) return null;
+      const pathWithVersion = parts[1];
+      const pathWithoutVersion = pathWithVersion.replace(/^v\d+\//, '');
+      const publicId = pathWithoutVersion.substring(0, pathWithoutVersion.lastIndexOf('.'));
+      return publicId || null;
+    } catch {
+      return null;
+    }
+  }
 }
