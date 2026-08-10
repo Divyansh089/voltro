@@ -46,6 +46,28 @@ export class UsersController {
     res.status(HttpStatus.OK).json(sendSuccess(updatedUser, 'User updated successfully'));
   }
 
+  static async updateMe(req: Request, res: Response) {
+    const userId = (req as any).user.userId;
+    const updatedUser = await UsersService.updateMe(
+      userId,
+      req.body,
+      req.ip as string,
+      req.get('user-agent') as string
+    );
+    
+    res.status(HttpStatus.OK).json(sendSuccess(updatedUser, 'Profile updated successfully'));
+  }
+
+  static async uploadAvatar(req: Request, res: Response) {
+    const userId = (req as any).user.userId;
+    if (!req.file) {
+      res.status(HttpStatus.BAD_REQUEST).json({ success: false, message: 'No image file provided' });
+      return;
+    }
+    const updatedUser = await UsersService.uploadAvatar(userId, req.file);
+    res.status(HttpStatus.OK).json(sendSuccess(updatedUser, 'Avatar uploaded successfully'));
+  }
+
   static async delete(req: Request, res: Response) {
     const adminUserId = (req as any).user.userId;
     await UsersService.delete(
@@ -56,5 +78,16 @@ export class UsersController {
     );
     
     res.status(HttpStatus.NO_CONTENT).send();
+  }
+
+  static async createStaffMember(req: Request, res: Response) {
+    const adminUserId = (req as any).user.userId;
+    const result = await UsersService.createStaffMember(
+      req.body,
+      adminUserId,
+      req.ip as string,
+      req.get('user-agent') as string
+    );
+    res.status(HttpStatus.CREATED).json(sendSuccess(result, 'Staff member created successfully'));
   }
 }
