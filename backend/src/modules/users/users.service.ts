@@ -1,10 +1,15 @@
 import prisma from '../../prisma/prismaClient';
-import { NotFoundError, ConflictError } from '../../common/errors';
-import { hashPassword } from '../../common/helpers';
+import { NotFoundError, ConflictError, BadRequestError } from '../../common/errors';
+import { hashPassword, comparePassword } from '../../common/helpers';
 import { AuditAction } from '../../common/enums';
 import { CacheService } from '../../cache/cache.service';
 import { CacheKeys } from '../../cache/cacheKeys';
+import { UploadService, CloudinaryService } from '../../storage';
+import { CLOUDINARY_FOLDERS } from '../../config/cloudinary';
+import { createModuleLogger } from '../../config/logger';
 import type { Prisma } from '@prisma/client';
+
+const log = createModuleLogger('users-service');
 
 export class UsersService {
   /**
@@ -166,6 +171,186 @@ export class UsersService {
   }
 
   /**
+   * Upload Avatar for user (Cloudinary)
+   */
+  static async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, avatarUrl: true },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // Upload new image to Cloudinary
+    const { url } = await UploadService.uploadFile(file, CLOUDINARY_FOLDERS.AVATARS);
+
+    // Clean up old avatar from Cloudinary if existed
+    if (user.avatarUrl) {
+      try {
+        const oldPublicId = CloudinaryService.extractPublicId(user.avatarUrl);
+        if (oldPublicId) {
+          await CloudinaryService.delete(oldPublicId);
+        }
+      } catch (err) {
+        log.error({ err, oldAvatarUrl: user.avatarUrl }, 'Failed to delete old avatar');
+      }
+    }
+
+    // Update user record with new avatarUrl
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: url },
+      select: {
+        id: true,
+        email: true,
+        avatarUrl: true,
+        customerProfile: true,
+        staffProfile: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  /**
+   * Update own profile (Self operation)
+   */
+  static async updateMe(
+    id: string,
+    data: {
+      email?: string;
+      phone?: string;
+      currentPassword?: string;
+      newPassword?: string;
+    },
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { staffProfile: true, customerProfile: true },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User', id);
+    }
+
+    const { email, phone, currentPassword, newPassword } = data;
+    const updateData: any = {};
+    const oldValues: any = {};
+    const newValues: any = {};
+
+    if (email && email !== user.email) {
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new ConflictError('Email already in use');
+      }
+      updateData.email = email;
+      oldValues.email = user.email;
+      newValues.email = email;
+    }
+
+    if (newPassword) {
+      if (!currentPassword) {
+        throw new ConflictError('Current password is required to change password');
+      }
+      const isMatch = await comparePassword(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        throw new ConflictError('Invalid current password');
+      }
+      updateData.passwordHash = await hashPassword(newPassword);
+    }
+
+    const updatedUser = await prisma.$transaction(async (tx: any) => {
+      // Update User
+      if (Object.keys(updateData).length > 0) {
+        await tx.user.update({
+          where: { id },
+          data: updateData,
+        });
+      }
+
+      // Update Customer Profile (Phone)
+      if (phone && user.customerProfile && phone !== user.customerProfile.phone) {
+        await tx.customerProfile.update({
+          where: { userId: id },
+          data: { phone },
+        });
+        oldValues.phone = user.customerProfile.phone;
+        newValues.phone = phone;
+      }
+
+      // Update Staff Profile (Phone)
+      if (phone && user.staffProfile && phone !== user.staffProfile.phone) {
+        await tx.staffProfile.update({
+          where: { userId: id },
+          data: { phone },
+        });
+        oldValues.phone = user.staffProfile.phone;
+        newValues.phone = phone;
+      }
+
+      // Invalidate sessions if email changed
+      if (updateData.email) {
+        const activeSessions = await tx.session.findMany({ where: { userId: id, isActive: true } });
+        for (const session of activeSessions) {
+          await CacheService.del(CacheKeys.session(session.id));
+        }
+        await tx.session.updateMany({
+          where: { userId: id },
+          data: { isActive: false },
+        });
+      }
+
+      // Log audit
+      if (Object.keys(newValues).length > 0 || newPassword) {
+        await tx.auditLog.create({
+          data: {
+            userId: id,
+            action: AuditAction.USER_UPDATED,
+            resource: 'user',
+            resourceId: id,
+          },
+        });
+      }
+
+      return tx.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          isActive: true,
+          isEmailVerified: true,
+          avatarUrl: true,
+          createdAt: true,
+          role: { select: { id: true, name: true } },
+          customerProfile: true,
+          staffProfile: true,
+        },
+      });
+    });
+
+    if (newPassword) {
+      try {
+        const { NotificationsService } = await import('../notifications/notifications.service');
+        await NotificationsService.create({
+          userId: id,
+          type: 'MAINTENANCE',
+          title: 'Security Alert: Password Changed',
+          message: 'Your Voltra account password was updated successfully. If you did not request this change, please contact customer support immediately.',
+          data: { kind: 'PASSWORD_CHANGED' },
+        });
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    return updatedUser;
+  }
+
+  /**
    * Delete a user (Soft delete)
    */
   static async delete(id: string, adminUserId: string, ipAddress?: string, userAgent?: string) {
@@ -205,5 +390,88 @@ export class UsersService {
         data: { isActive: false },
       });
     });
+  }
+
+  /**
+   * Create a new Staff Member with auto-generated password
+   */
+  static async createStaffMember(
+    data: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone?: string | null;
+      role: string;
+    },
+    adminUserId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) {
+      throw new ConflictError('A user with this email address already exists');
+    }
+
+    const roleRecord = await prisma.role.findUnique({ where: { name: data.role } });
+    if (!roleRecord) {
+      throw new NotFoundError('Role', data.role);
+    }
+
+    // Auto-generate secure password
+    const rawChars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let randomStr = '';
+    for (let i = 0; i < 8; i++) {
+      randomStr += rawChars.charAt(Math.floor(Math.random() * rawChars.length));
+    }
+    const generatedPassword = `Voltra@${randomStr}`;
+    const passwordHash = await hashPassword(generatedPassword);
+
+    const newUser = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.user.create({
+        data: {
+          email: data.email,
+          passwordHash,
+          roleId: roleRecord.id,
+          isEmailVerified: true,
+          staffProfile: {
+            create: {
+              roleId: roleRecord.id,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              phone: data.phone || '',
+            },
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          isActive: true,
+          isEmailVerified: true,
+          createdAt: true,
+          role: { select: { id: true, name: true } },
+          staffProfile: true,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: adminUserId,
+          action: AuditAction.USER_CREATED,
+          resource: 'user',
+          resourceId: created.id,
+          newValues: { email: data.email, role: data.role },
+          ipAddress,
+          userAgent,
+        },
+      });
+
+      return created;
+    });
+
+    return {
+      user: newUser,
+      generatedPassword,
+      email: data.email,
+    };
   }
 }
