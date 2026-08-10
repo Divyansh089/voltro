@@ -72,6 +72,21 @@ export class CouponsService {
       return created;
     });
 
+    // Broadcast coupon to customers
+    try {
+      const { NotificationsService } = await import('../notifications/notifications.service');
+      const discountText = coupon.discountType === 'PERCENTAGE' ? `${coupon.discountValue}% OFF` : `$${coupon.discountValue} OFF`;
+      const minOrderText = coupon.minOrderAmount ? ` (Min. order: $${coupon.minOrderAmount})` : '';
+      await NotificationsService.broadcastToAll({
+        type: 'GENERAL',
+        title: '🏷️ New Promo Code Launched!',
+        message: `Use code ${coupon.code} at checkout to get ${discountText}${minOrderText}. Valid until ${new Date(coupon.validUntil).toLocaleDateString()}.`,
+        data: { couponCode: coupon.code, discountValue: coupon.discountValue, minOrderAmount: coupon.minOrderAmount, kind: 'NEW_COUPON' },
+      });
+    } catch (e) {
+      // ignore
+    }
+
     return coupon;
   }
 
