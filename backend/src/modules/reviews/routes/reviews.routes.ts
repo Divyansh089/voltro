@@ -14,7 +14,7 @@ const router = Router();
 
 router.get(
   '/product/:productId',
-  validate(z.object({ productId: idParamSchema.shape.id }), 'params'),
+  validate(z.object({ productId: z.string().min(1) }), 'params'),
   validate(reviewQuerySchema, 'query'),
   asyncHandler(ReviewsController.findProductReviews)
 );
