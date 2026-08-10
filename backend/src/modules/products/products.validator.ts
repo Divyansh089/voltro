@@ -22,7 +22,7 @@ export const createProductSchema = z.object({
 export const updateProductSchema = createProductSchema.partial();
 
 export const productListQuerySchema = paginationSchema.merge(sortSchema).merge(searchSchema).extend({
-  categoryId: uuidSchema.optional(),
+  categoryId: z.string().optional(),
   brand: z.string().optional(),
   status: z.nativeEnum(ProductStatus).optional(),
   minPrice: z.coerce.number().positive().optional(),
