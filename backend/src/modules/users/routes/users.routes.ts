@@ -3,14 +3,38 @@ import { UsersController } from '../users.controller';
 import { validate } from '../../../middleware/validation.middleware';
 import { authMiddleware } from '../../../middleware/auth.middleware';
 import { permission } from '../../../middleware/permission.middleware';
-import { userListQuerySchema, updateUserSchema } from '../users.validator';
+import { userListQuerySchema, updateUserSchema, updateMeSchema, createStaffSchema } from '../users.validator';
 import { idParamSchema } from '../../../common/validators';
 import { asyncHandler } from '../../../common/utils/asyncHandler';
 
+import { uploadSingle } from '../../../middleware/upload.middleware';
+
 const router = Router();
 
-// All user management routes require auth and specific permissions
+// All user management routes require auth
 router.use(authMiddleware);
+
+// Upload own avatar image (Cloudinary)
+router.post(
+  '/me/avatar',
+  uploadSingle,
+  asyncHandler(UsersController.uploadAvatar)
+);
+
+// Update self (Any authenticated user)
+router.patch(
+  '/me',
+  validate(updateMeSchema, 'body'),
+  asyncHandler(UsersController.updateMe)
+);
+
+// Create new staff member (Admin)
+router.post(
+  '/staff',
+  permission('user:read'),
+  validate(createStaffSchema, 'body'),
+  asyncHandler(UsersController.createStaffMember)
+);
 
 // List users (Admin)
 router.get(
