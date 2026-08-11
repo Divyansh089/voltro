@@ -33,4 +33,9 @@ router.delete(
   asyncHandler(NotificationsController.delete)
 );
 
+router.post(
+  '/custom',
+  asyncHandler(NotificationsController.createCustom)
+);
+
 export default router;
