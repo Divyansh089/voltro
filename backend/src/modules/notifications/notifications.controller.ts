@@ -40,4 +40,10 @@ export class NotificationsController {
     await NotificationsService.delete(req.params.id as string, userId);
     res.status(HttpStatus.NO_CONTENT).send();
   }
+
+  static async createCustom(req: Request, res: Response) {
+    const body = req.body;
+    await NotificationsService.createCustomNotification(body);
+    res.status(HttpStatus.CREATED).json(sendSuccess(null, 'Custom notification created successfully', HttpStatus.CREATED));
+  }
 }
