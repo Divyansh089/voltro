@@ -37,6 +37,7 @@ export class TicketsService {
         OR: [
           { id: { contains: search, mode: 'insensitive' } },
           { subject: { contains: search, mode: 'insensitive' } },
+          { orderId: { contains: search, mode: 'insensitive' } },
         ],
       }),
     };
@@ -82,7 +83,15 @@ export class TicketsService {
   /**
    * Create ticket (Customer)
    */
-  static async create(userId: string, data: { subject: string; description: string; priority?: string; orderId?: string }, ipAddress?: string, userAgent?: string) {
+  static async create(
+    userId: string,
+    data: { subject: string; category?: string; description?: string; message?: string; priority?: string; orderId?: string },
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const textMessage = data.message || data.description || 'Support query created';
+    const categoryName = data.category || 'General';
+
     const ticket = await prisma.$transaction(async (tx: any) => {
       
       // Auto-Assignment Logic: Find Support Staff with fewest open tickets
@@ -119,7 +128,7 @@ export class TicketsService {
       const created = await tx.supportTicket.create({
         data: {
           userId,
-          category: 'GENERAL',
+          category: categoryName,
           subject: data.subject,
           status: 'OPEN',
           priority: data.priority || 'LOW',
@@ -128,7 +137,7 @@ export class TicketsService {
           replies: {
             create: {
               userId,
-              message: data.description,
+              message: textMessage,
             }
           }
         }
@@ -148,6 +157,27 @@ export class TicketsService {
       return created;
     });
 
+    // Notify Customer & Support Staff
+    try {
+      const { NotificationsService } = await import('../notifications/notifications.service');
+      await NotificationsService.create({
+        userId,
+        type: 'GENERAL',
+        title: 'Customer Support Request Opened',
+        message: `Your ticket '${ticket.subject}' has been submitted. Our team will reply shortly.`,
+        data: { ticketId: ticket.id, kind: 'CS_TICKET_OPENED' },
+      });
+
+      await NotificationsService.broadcastToRoles(['ADMIN', 'CUSTOMER_SUPPORT'], {
+        type: 'GENERAL',
+        title: 'New Customer Ticket Opened',
+        message: `Customer (ID: ${userId}) created support ticket '${ticket.subject}' (Ticket ID: ${ticket.id})`,
+        data: { customerId: userId, ticketId: ticket.id, kind: 'CS_TICKET_OPENED' },
+      });
+    } catch (e) {
+      // ignore
+    }
+
     return ticket;
   }
 
@@ -162,8 +192,8 @@ export class TicketsService {
       throw new BadRequestError('Not authorized to add message to this ticket');
     }
 
-    if (ticket.status === 'CLOSED' || ticket.status === 'RESOLVED') {
-      throw new BadRequestError('Cannot add message to a closed or resolved ticket');
+    if (ticket.status === 'CLOSED') {
+      throw new BadRequestError('Cannot add message to a closed ticket');
     }
 
     const newMessage = await prisma.$transaction(async (tx: any) => {
@@ -176,11 +206,9 @@ export class TicketsService {
         }
       });
 
-      // If customer replies, mark as OPEN. If admin replies, mark as IN_PROGRESS (if it was OPEN).
+      // When customer support staff replies to the chat, automatically transition status from OPEN to IN_PROGRESS
       let newStatus = ticket.status;
-      if (!isAdmin && ticket.status !== 'OPEN') {
-        newStatus = 'OPEN';
-      } else if (isAdmin && ticket.status === 'OPEN') {
+      if (isAdmin && ticket.status === 'OPEN') {
         newStatus = 'IN_PROGRESS';
       }
 
@@ -194,6 +222,22 @@ export class TicketsService {
 
       return created;
     });
+
+    // If staff replied, notify Customer
+    if (isAdmin) {
+      try {
+        const { NotificationsService } = await import('../notifications/notifications.service');
+        await NotificationsService.create({
+          userId: ticket.userId,
+          type: 'GENERAL',
+          title: 'Customer Support Reply',
+          message: `Customer Support staff replied to your ticket '${ticket.subject}'.`,
+          data: { ticketId: ticket.id, kind: 'CS_TICKET_REPLIED' },
+        });
+      } catch (e) {
+        // ignore
+      }
+    }
 
     return newMessage;
   }
