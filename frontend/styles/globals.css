@@ -3,6 +3,16 @@
 @source "../src";
 @import "tw-animate-css";
 
+::selection {
+  background-color: #CCFF00 !important;
+  color: #0A0D14 !important;
+}
+
+::-moz-selection {
+  background-color: #CCFF00 !important;
+  color: #0A0D14 !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -164,6 +174,10 @@
     backdrop-filter: blur(14px);
     border-radius: 20px;
   }
+  .chip-ghost {
+    background: rgba(255, 255, 255, 0.4);
+    color: var(--text-primary);
+  }
   .btn-neon {
     background: var(--accent-neon);
     color: var(--text-primary);
@@ -200,5 +214,37 @@
   }
   .text-ink-muted {
     color: var(--text-muted);
+  }
+}
+
+/* 3D Card Flip Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Print Rules for Clean 1-Page Tax Invoice */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  header,
+  footer,
+  nav,
+  aside,
+  .print\:hidden {
+    display: none !important;
   }
 }
