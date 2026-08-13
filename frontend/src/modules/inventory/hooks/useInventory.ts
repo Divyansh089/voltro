@@ -35,6 +35,7 @@ export interface InventoryResponse {
 export function useInventory(params: {
   page?: number;
   limit?: number;
+  search?: string;
   productId?: string;
   variantId?: string;
   lowStockOnly?: boolean;
