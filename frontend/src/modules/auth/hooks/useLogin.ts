@@ -14,14 +14,16 @@ export function useLogin() {
     mutationFn: (data: LoginRequest) => loginUser(data),
     onSuccess: (res) => {
       const { accessToken, user } = res.data;
+      const profile = user.staffProfile || user.customerProfile;
       login(
         accessToken,
         {
           id: user.id,
           email: user.email,
           role: user.role as RoleName,
-          firstName: user.customerProfile?.firstName,
-          lastName: user.customerProfile?.lastName,
+          firstName: profile?.firstName,
+          lastName: profile?.lastName,
+          staffProfile: user.staffProfile ? { phone: user.staffProfile.phone } : undefined,
         },
         user.permissions,
       );
