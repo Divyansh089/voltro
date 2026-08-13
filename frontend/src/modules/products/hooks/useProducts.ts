@@ -7,7 +7,7 @@ export interface Product {
   name: string;
   description: string;
   basePrice: number | string;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   createdAt: string;
   updatedAt: string;
   category?: {
@@ -47,5 +47,17 @@ export function useProducts(params?: {
       });
       return data;
     },
+  });
+}
+
+export function useProductDetail(idOrSlug: string | null) {
+  return useQuery({
+    queryKey: ["product", idOrSlug],
+    queryFn: async () => {
+      if (!idOrSlug) return null;
+      const res = await api.get(`/products/${idOrSlug}`);
+      return res.data?.data;
+    },
+    enabled: !!idOrSlug,
   });
 }
