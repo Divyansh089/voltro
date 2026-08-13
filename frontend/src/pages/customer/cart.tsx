@@ -1,13 +1,20 @@
 import Head from "next/head";
 import Link from "next/link";
+import { GetServerSideProps } from "next";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/store/cart.store";
 import { ROUTES } from "@/lib/routes";
 
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};
+
 export default function CartPage() {
   const { items, setQty, remove, subtotal } = useCart();
-  const shipping = subtotal > 200 || subtotal === 0 ? 0 : 12;
-  const total = subtotal + shipping;
+  const shipping: number = 0;
+  const total = Number(subtotal) + shipping;
 
   return (
     <>
@@ -33,7 +40,7 @@ export default function CartPage() {
                   <div
                     className="grid h-20 w-20 place-items-center rounded-2xl"
                     style={{
-                      background: `linear-gradient(135deg, ${item.color}30, ${item.color}10)`,
+                      background: `linear-gradient(135deg, ${item.color || "#0F172A"}30, ${item.color || "#0F172A"}10)`,
                     }}
                   >
                     <img src={item.image} alt={item.name} className="h-14 w-14 object-contain" />
@@ -58,7 +65,7 @@ export default function CartPage() {
                     </button>
                   </div>
                   <div className="w-20 text-right font-display font-bold text-ink">
-                    ${item.price * item.qty}
+                    ${(item.price * item.qty).toFixed(2)}
                   </div>
                   <button
                     onClick={() => remove(item.id)}
@@ -75,23 +82,23 @@ export default function CartPage() {
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Subtotal</dt>
-                  <dd className="font-medium text-ink">${subtotal}</dd>
+                  <dd className="font-medium text-ink">${subtotal.toFixed(2)}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Shipping</dt>
                   <dd className="font-medium text-ink">
-                    {shipping === 0 ? "Free" : `$${shipping}`}
+                    {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
                   </dd>
                 </div>
                 <div className="my-3 border-t border-ink/10" />
                 <div className="flex justify-between text-base">
                   <dt className="font-semibold text-ink">Total</dt>
-                  <dd className="font-display text-xl font-bold text-ink">${total}</dd>
+                  <dd className="font-display text-xl font-bold text-ink">${total.toFixed(2)}</dd>
                 </div>
               </dl>
               <Link
                 href={ROUTES.CUSTOMER_CHECKOUT}
-                className="btn-neon mt-5 inline-flex w-full items-center justify-center py-3 text-sm"
+                className="btn-neon mt-5 inline-flex w-full items-center justify-center py-3 text-sm font-bold"
               >
                 Checkout
               </Link>
