@@ -22,7 +22,7 @@ export function useRegister() {
           firstName: user.customerProfile?.firstName,
           lastName: user.customerProfile?.lastName,
         },
-        user.permissions,
+        user.permissions || [],
       );
       router.push(ROUTES.HOME);
     },
