@@ -2,25 +2,17 @@ import Head from "next/head";
 import { useState } from "react";
 import { StaffShell } from "@/components/layouts/StaffShell";
 import { useInventory } from "@/modules/inventory/hooks/useInventory";
-import { useAdjustInventory } from "@/modules/inventory/hooks/useAdjustInventory";
 import { usePermission } from "@/hooks/usePermission";
+import { AdjustStockModal } from "@/components/staff/AdjustStockModal";
+import { SlidersHorizontal, Search } from "lucide-react";
 
 export default function StaffInventoryPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useInventory({ page, limit: 20 });
-  const { mutate: adjustInventory } = useAdjustInventory();
+  const [search, setSearch] = useState("");
+  const { data, isLoading } = useInventory({ page, limit: 20, search });
   const canUpdate = usePermission("inventory:update");
 
-  const handleAdjust = (variantId: string) => {
-    const adjustmentStr = prompt("Enter adjustment amount (e.g. 10 to add, -5 to subtract):");
-    if (!adjustmentStr) return;
-    const adjustment = parseInt(adjustmentStr, 10);
-    if (isNaN(adjustment)) return alert("Invalid number.");
-    
-    const reason = prompt("Enter reason for adjustment:") || "Manual Adjustment";
-    
-    adjustInventory({ variantId, adjustment, reason });
-  };
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   return (
     <>
@@ -29,9 +21,25 @@ export default function StaffInventoryPage() {
       </Head>
       <StaffShell>
         <div className="space-y-6">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-ink">Inventory Management</h1>
-            <p className="text-sm text-ink-soft">Monitor stock levels and adjust quantities.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-ink">Inventory Management</h1>
+              <p className="text-sm text-ink-soft">Monitor stock levels and adjust variant quantities.</p>
+            </div>
+
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" size={16} />
+              <input
+                type="text"
+                placeholder="Search inventory or SKU..."
+                className="w-full rounded-xl border border-ink/10 bg-white py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition-all focus:border-neon focus:ring-1 focus:ring-neon"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
           </div>
 
           <div className="glass overflow-hidden rounded-2xl">
@@ -90,10 +98,10 @@ export default function StaffInventoryPage() {
                           <td className="px-6 py-4">
                             {canUpdate && (
                               <button
-                                onClick={() => handleAdjust(item.variantId)}
-                                className="rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-neon hover:text-neon"
+                                onClick={() => setSelectedItem(item)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-ink/10 bg-white px-3.5 py-1.5 text-xs font-semibold text-ink shadow-sm transition hover:border-neon hover:bg-neon/10"
                               >
-                                Adjust
+                                <SlidersHorizontal size={13} className="text-ink-soft" /> Adjust
                               </button>
                             )}
                           </td>
@@ -128,6 +136,13 @@ export default function StaffInventoryPage() {
             )}
           </div>
         </div>
+
+        {/* Adjust Stock Pop-up Modal */}
+        <AdjustStockModal
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+          item={selectedItem}
+        />
       </StaffShell>
     </>
   );
