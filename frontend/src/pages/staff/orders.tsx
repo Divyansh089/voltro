@@ -1,15 +1,25 @@
 import Head from "next/head";
 import { useState } from "react";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { StaffShell } from "@/components/layouts/StaffShell";
 import { useAdminOrders } from "@/modules/orders/hooks/useAdminOrders";
 import { useUpdateOrderStatus } from "@/modules/orders/hooks/useUpdateOrderStatus";
 import { usePermission } from "@/hooks/usePermission";
+import { useAuth } from "@/providers/AuthProvider";
+
+import { Search } from "lucide-react";
 
 export default function StaffOrdersPage() {
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminOrders({ page, limit: 20 });
+  const [search, setSearch] = useState("");
+  const { data, isLoading } = useAdminOrders({ page, limit: 20, search });
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrderStatus();
-  const canUpdate = usePermission("order:update");
+  const canUpdate =
+    usePermission("order:update") ||
+    user?.role === "CUSTOMER_SUPPORT" ||
+    user?.role === "ADMIN" ||
+    user?.role === "PRODUCT_MANAGER";
 
   const handleStatusChange = (id: string, newStatus: string) => {
     if (confirm(`Change order status to ${newStatus}?`)) {
@@ -24,9 +34,25 @@ export default function StaffOrdersPage() {
       </Head>
       <StaffShell>
         <div className="space-y-6">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-ink">Order Fulfillment</h1>
-            <p className="text-sm text-ink-soft">View and manage customer orders.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-ink">Order Fulfillment</h1>
+              <p className="text-sm text-ink-soft">View and manage customer orders.</p>
+            </div>
+
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" size={16} />
+              <input
+                type="text"
+                placeholder="Search orders or customer..."
+                className="w-full rounded-xl border border-ink/10 bg-white py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition-all focus:border-neon focus:ring-1 focus:ring-neon"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
           </div>
 
           <div className="glass overflow-hidden rounded-2xl">
@@ -82,18 +108,19 @@ export default function StaffOrdersPage() {
                         </td>
                         <td className="px-6 py-4">
                           {canUpdate && (
-                            <select
-                              className="rounded-lg border border-ink/10 bg-white px-2 py-1 text-xs text-ink focus:border-neon focus:outline-none disabled:opacity-50"
+                            <CustomSelect
+                              size="sm"
+                              disabled={isUpdating || order.status === "CANCELLED"}
                               value={order.status}
-                              onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                              disabled={isUpdating}
-                            >
-                              <option value="PENDING">Pending</option>
-                              <option value="PROCESSING">Processing</option>
-                              <option value="SHIPPED">Shipped</option>
-                              <option value="DELIVERED">Delivered</option>
-                              <option value="CANCELLED">Cancelled</option>
-                            </select>
+                              onChange={(val) => handleStatusChange(order.id, val)}
+                              options={[
+                                { value: "PROCESSING", label: "Processing" },
+                                { value: "IN_TRANSIT", label: "In Transit" },
+                                { value: "SHIPPED", label: "Shipped" },
+                                { value: "DELIVERED", label: "Delivered" },
+                                ...(order.status === "CANCELLED" ? [{ value: "CANCELLED", label: "Cancelled" }] : []),
+                              ]}
+                            />
                           )}
                         </td>
                       </tr>
