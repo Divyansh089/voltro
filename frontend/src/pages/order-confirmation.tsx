@@ -20,10 +20,10 @@ export default function Confirmation() {
             <span className="font-semibold text-ink">#{orderId}</span> is being prepared.
           </p>
           <div className="mt-6 flex justify-center gap-3">
-            <Link href="/profile" className="btn-ink px-5 py-2.5 text-sm">
+            <Link href="/customer/profile?tab=orders" className="btn-ink px-5 py-2.5 text-sm">
               Track order
             </Link>
-            <Link href="/categories" className="btn-neon px-5 py-2.5 text-sm">
+            <Link href="/" className="btn-neon px-5 py-2.5 text-sm">
               Continue shopping
             </Link>
           </div>
