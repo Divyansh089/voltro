@@ -5,7 +5,7 @@ export interface Ticket {
   id: string;
   userId: string;
   subject: string;
-  status: "OPEN" | "IN_PROGRESS" | "WAITING_ON_CUSTOMER" | "RESOLVED" | "CLOSED";
+  status: "OPEN" | "IN_PROGRESS" | "CLOSED";
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   category: "GENERAL" | "ORDER_ISSUE" | "RETURNS" | "TECHNICAL";
   assignedToId?: string;
