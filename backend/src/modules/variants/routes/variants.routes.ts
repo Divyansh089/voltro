@@ -3,7 +3,7 @@ import { VariantsController } from '../variants.controller';
 import { validate } from '../../../middleware/validation.middleware';
 import { authMiddleware } from '../../../middleware/auth.middleware';
 import { permission } from '../../../middleware/permission.middleware';
-import { createVariantSchema, updateVariantSchema, variantListQuerySchema } from '../variants.validator';
+import { createVariantSchema, updateVariantSchema, listVariantsSchema } from '../variants.validator';
 import { idParamSchema } from '../../../common/validators';
 import { asyncHandler } from '../../../common/utils/asyncHandler';
 
@@ -15,7 +15,7 @@ router.use(authMiddleware);
 router.get(
   '/',
   permission('product:read'),
-  validate(variantListQuerySchema, 'query'),
+  validate(listVariantsSchema, 'query'),
   asyncHandler(VariantsController.findAll)
 );
 

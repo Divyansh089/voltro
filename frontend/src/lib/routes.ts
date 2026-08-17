@@ -8,21 +8,22 @@ export const ROUTES = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   SEARCH: "/search",
-  CATEGORIES: "/categories",
+  CATEGORIES: "/categories/all",
 
   // Customer
   CUSTOMER_PROFILE: "/customer/profile",
-  CUSTOMER_ORDERS: "/customer/orders",
+  CUSTOMER_ORDERS: "/customer/profile?tab=orders",
   CUSTOMER_CART: "/customer/cart",
   CUSTOMER_CHECKOUT: "/customer/checkout",
   CUSTOMER_WISHLIST: "/customer/wishlist",
-  CUSTOMER_SUPPORT: "/customer/support",
+  CUSTOMER_SUPPORT: "/customer/profile?tab=support",
 
   // Staff
   STAFF_DASHBOARD: "/staff/dashboard",
   STAFF_PRODUCTS: "/staff/products",
   STAFF_INVENTORY: "/staff/inventory",
   STAFF_ORDERS: "/staff/orders",
+  STAFF_COUPONS: "/staff/coupons",
   STAFF_SUPPORT: "/staff/support",
   STAFF_ANALYTICS: "/staff/analytics",
   STAFF_CMS: "/staff/cms",

@@ -29,13 +29,14 @@ export class InventoryService {
   static async findAll(params: {
     page: number;
     limit: number;
+    search?: string;
     variantId?: string;
     productId?: string;
     lowStockOnly?: boolean;
     sortBy: string;
     sortOrder: 'asc' | 'desc';
   }) {
-    const { page, limit, variantId, productId, lowStockOnly, sortBy, sortOrder } = params;
+    const { page, limit, search, variantId, productId, lowStockOnly, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     // To properly do "lowStockOnly" we have to use Prisma's field comparison (quantity <= lowStockThreshold)

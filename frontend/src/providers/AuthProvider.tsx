@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/router";
 import { StorageService } from "@/services/storage.service";
+import api from "@/lib/api";
 import { isStaffRoute, isCustomerRoute, ROUTES } from "@/lib/routes";
 import { hasPermission } from "@/lib/permissions";
 import type { RoleName, PermissionName } from "@/constants";
@@ -19,6 +20,12 @@ export interface AuthUser {
   role: RoleName;
   firstName?: string;
   lastName?: string;
+  avatarUrl?: string | null;
+  staffProfile?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string | null;
+  };
 }
 
 interface AuthContextType {
@@ -29,6 +36,7 @@ interface AuthContextType {
   login: (token: string, user: AuthUser, permissions: string[]) => void;
   logout: () => void;
   can: (permission: PermissionName) => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,7 +48,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hydrate from localStorage on mount
+  const refreshUser = useCallback(async () => {
+    try {
+      const token = StorageService.getToken();
+      if (!token) return;
+      const res = await api.get("/auth/me");
+      const rawData = res.data?.data;
+      const freshData = rawData?.user || rawData;
+      if (freshData) {
+        setUser((prev) => {
+          const updated: AuthUser = {
+            id: freshData.id || prev?.id,
+            email: freshData.email || prev?.email,
+            role: (freshData.role?.name || freshData.role || prev?.role) as RoleName,
+            firstName: freshData.staffProfile?.firstName || freshData.customerProfile?.firstName || freshData.firstName || prev?.firstName,
+            lastName: freshData.staffProfile?.lastName || freshData.customerProfile?.lastName || freshData.lastName || prev?.lastName,
+            avatarUrl: freshData.avatarUrl ?? prev?.avatarUrl,
+            staffProfile: freshData.staffProfile || prev?.staffProfile,
+          };
+          StorageService.setUser(updated);
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to refresh user profile", err);
+    }
+  }, []);
+
+  // Hydrate from localStorage on mount & sync with server
   useEffect(() => {
     const savedUser = StorageService.getUser<AuthUser>();
     const savedPerms = StorageService.getPermissions();
@@ -48,8 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(savedUser);
       setPermissions(savedPerms);
     }
-    setIsLoading(false);
-  }, []);
+
+    const token = StorageService.getToken();
+    if (token) {
+      refreshUser().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+  }, [refreshUser]);
 
   const login = useCallback((token: string, newUser: AuthUser, newPerms: string[]) => {
     StorageService.setToken(token);
@@ -92,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, permissions, isLoading, isAuthenticated: !!user, login, logout, can }}
+      value={{ user, permissions, isLoading, isAuthenticated: !!user, login, logout, can, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

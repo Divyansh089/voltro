@@ -12,9 +12,9 @@ export function useRegister() {
   return useMutation({
     mutationFn: (data: RegisterRequest) => registerUser(data),
     onSuccess: (res) => {
-      const { token, user } = res.data;
+      const { accessToken, user } = res.data;
       login(
-        token,
+        accessToken,
         {
           id: user.id,
           email: user.email,
@@ -22,7 +22,7 @@ export function useRegister() {
           firstName: user.customerProfile?.firstName,
           lastName: user.customerProfile?.lastName,
         },
-        user.permissions,
+        user.permissions || [],
       );
       router.push(ROUTES.HOME);
     },

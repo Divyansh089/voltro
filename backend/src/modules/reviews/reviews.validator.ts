@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { uuidSchema, paginationSchema, sortSchema, searchSchema } from '../../common/validators';
 
 export const createReviewSchema = z.object({
-  productId: uuidSchema,
+  productId: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   title: z.string().max(100).optional(),
   comment: z.string().max(1000).optional(),

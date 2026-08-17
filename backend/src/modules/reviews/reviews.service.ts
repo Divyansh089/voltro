@@ -21,7 +21,12 @@ export class ReviewsService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      ...(productId && { productId }),
+      ...(productId && {
+        OR: [
+          { productId },
+          { product: { slug: productId } },
+        ],
+      }),
       ...(userId && { userId }),
       ...(rating && { rating }),
       ...(isApprovedOnly && { isApproved: true }),
@@ -36,9 +41,15 @@ export class ReviewsService {
         orderBy: { [sortBy]: sortOrder },
         include: {
           user: {
-            select: { id: true, customerProfile: { select: { firstName: true, lastName: true } }, avatarUrl: true }
+            select: {
+              id: true,
+              email: true,
+              customerProfile: { select: { firstName: true, lastName: true } },
+              staffProfile: { select: { firstName: true, lastName: true } },
+              avatarUrl: true,
+            },
           },
-          ...(userId && { product: { select: { id: true, name: true, slug: true, images: { where: { isPrimary: true }, take: 1 } } } })
+          ...(userId && { product: { select: { id: true, name: true, slug: true, images: { where: { isPrimary: true }, take: 1 } } } }),
         },
       }),
     ]);
@@ -102,11 +113,19 @@ export class ReviewsService {
     ipAddress?: string,
     userAgent?: string
   ) {
-    const product = await prisma.product.findUnique({ where: { id: data.productId } });
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [
+          { id: data.productId },
+          { slug: data.productId },
+        ],
+      },
+    });
     if (!product) throw new NotFoundError('Product', data.productId);
+    const targetProductId = product.id;
 
     const existingReview = await prisma.review.findUnique({
-      where: { userId_productId: { userId, productId: data.productId } }
+      where: { userId_productId: { userId, productId: targetProductId } }
     });
 
     if (existingReview) {
@@ -117,7 +136,7 @@ export class ReviewsService {
     const orderWithProduct = await prisma.orderItem.findFirst({
       where: {
         order: { userId, status: 'DELIVERED' },
-        variant: { productId: data.productId }
+        variant: { productId: targetProductId }
       }
     });
 
@@ -126,15 +145,18 @@ export class ReviewsService {
     const review = await prisma.$transaction(async (tx: any) => {
       const created = await tx.review.create({
         data: {
-          ...data,
+          productId: targetProductId,
+          rating: data.rating,
+          title: data.title || '',
+          comment: data.comment || '',
           userId,
           isVerifiedPurchase,
-          isApproved: true, // Auto-approve for now, can be changed to false for manual moderation
+          isApproved: true, // Auto-approve for now
         }
       });
 
-      // Update product average rating async (fire and forget handled below or in transaction)
-      await this.updateProductRating(tx, data.productId);
+      // Update product average rating
+      await this.updateProductRating(tx, targetProductId);
 
       await tx.auditLog.create({
         data: {
@@ -142,10 +164,9 @@ export class ReviewsService {
           action: 'REVIEW_CREATED',
           resource: 'review',
           resourceId: created.id,
-          newValues: data as any,
           ipAddress,
           userAgent,
-        }
+        },
       });
 
       return created;

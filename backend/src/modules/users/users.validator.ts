@@ -12,9 +12,24 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = createUserSchema.partial().omit({ password: true });
 
+export const createStaffSchema = z.object({
+  email: emailSchema,
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  phone: z.string().optional().nullable(),
+  role: z.enum(['ADMIN', 'PRODUCT_MANAGER', 'CUSTOMER_SUPPORT']),
+});
+
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+export const updateMeSchema = z.object({
+  email: emailSchema.optional(),
+  phone: z.string().or(z.literal('')).optional().nullable(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(1, 'New password must not be empty').optional(),
 });
 
 export const userListQuerySchema = paginationSchema.merge(sortSchema).merge(searchSchema).extend({

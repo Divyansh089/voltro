@@ -53,9 +53,20 @@ router.get(
   asyncHandler(OrdersController.adminFindById)
 );
 
+const allowOrderUpdate = (req: any, res: any, next: any) => {
+  if (
+    req.user?.role === 'ADMIN' ||
+    req.user?.role === 'PRODUCT_MANAGER' ||
+    req.user?.role === 'CUSTOMER_SUPPORT'
+  ) {
+    return next();
+  }
+  return permission('order:update')(req, res, next);
+};
+
 router.patch(
   '/:id/status',
-  permission('order:update'),
+  allowOrderUpdate,
   validate(idParamSchema, 'params'),
   validate(updateOrderStatusSchema, 'body'),
   asyncHandler(OrdersController.updateStatus)

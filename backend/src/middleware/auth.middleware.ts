@@ -18,27 +18,30 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
     // Extract Bearer token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log("[DEBUG] Auth Header missing or invalid:", authHeader);
       throw new UnauthorizedError('Access token is required');
     }
 
     const token = authHeader.split(' ')[1];
     if (!token) {
+      console.log("[DEBUG] Token missing after split");
       throw new UnauthorizedError('Access token is required');
     }
 
     // Verify JWT
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as {
-      userId: string;
-      sessionId: string;
-      role: string;
-      iat: number;
-      exp: number;
-    };
+    let decoded;
+    try {
+      decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as any;
+    } catch (err: any) {
+      console.log("[DEBUG] JWT verify failed:", err.message);
+      throw err;
+    }
 
     // Validate session exists in Redis (async, but we handle it)
     CacheService.get<{ userId: string; role: string }>(CacheKeys.session(decoded.sessionId))
       .then((session) => {
         if (!session) {
+          console.log("[DEBUG] Session missing from Redis for ID:", decoded.sessionId);
           return next(new UnauthorizedError('Session has been invalidated'));
         }
 
@@ -47,18 +50,18 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
           userId: decoded.userId,
           sessionId: decoded.sessionId,
           role: decoded.role,
-        } satisfies IRequestUser;
+        };
 
         next();
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log("[DEBUG] CacheService error:", err);
         // Redis unavailable — fall through (graceful degradation)
-        // In production, you might want to deny access if Redis is down
         (req as any).user = {
           userId: decoded.userId,
           sessionId: decoded.sessionId,
           role: decoded.role,
-        } satisfies IRequestUser;
+        };
 
         next();
       });

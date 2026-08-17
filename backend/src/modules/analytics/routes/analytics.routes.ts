@@ -43,4 +43,29 @@ router.get(
   asyncHandler(AnalyticsController.getProductDashboard)
 );
 
+router.get(
+  '/support-dashboard',
+  permission('ticket:read'),
+  asyncHandler(AnalyticsController.getSupportDashboard)
+);
+
+router.get(
+  '/admin-charts',
+  permission('analytics:read'),
+  requireAdmin,
+  asyncHandler(AnalyticsController.getAdminCharts)
+);
+
+router.get(
+  '/product-charts',
+  permission('analytics:read'),
+  asyncHandler(AnalyticsController.getProductCharts)
+);
+
+router.get(
+  '/support-charts',
+  permission('ticket:read'),
+  asyncHandler(AnalyticsController.getSupportCharts)
+);
+
 export default router;

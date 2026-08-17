@@ -31,12 +31,23 @@ export class ProductsService {
         ...(isPublic && { status: ProductStatus.ACTIVE }),
       },
       include: {
-        category: { select: { id: true, name: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true, hasVariants: true } },
         images: { orderBy: { sortOrder: 'asc' } },
         specifications: { orderBy: { sortOrder: 'asc' } },
+        options: {
+          orderBy: { position: 'asc' },
+          include: { values: { orderBy: { value: 'asc' } } }
+        },
         variants: {
           where: isPublic ? { isActive: true } : undefined,
-          include: { inventory: true },
+          include: {
+            inventory: true,
+            optionValues: {
+              include: {
+                optionValue: { include: { option: { select: { name: true, position: true } } } }
+              }
+            }
+          },
         },
       },
     });
@@ -45,11 +56,28 @@ export class ProductsService {
       throw new NotFoundError('Product', idOrSlug);
     }
 
+    // Normalize optionValues on each variant
+    const normalized = {
+      ...product,
+      variants: product.variants.map((v: any) => {
+        const { optionValues, ...rest } = v;
+        return {
+          ...rest,
+          options: (optionValues ?? []).map((vov: any) => ({
+            optionName: vov.optionValue?.option?.name,
+            position: vov.optionValue?.option?.position,
+            value: vov.optionValue?.value,
+            priceDelta: vov.optionValue?.priceDelta,
+          })).sort((a: any, b: any) => a.position - b.position),
+        };
+      }),
+    };
+
     if (isPublic) {
-      await CacheService.set(cacheKey, product, TTL.PRODUCT_DETAIL);
+      await CacheService.set(cacheKey, normalized, TTL.PRODUCT_DETAIL);
     }
 
-    return product;
+    return normalized;
   }
 
   /**
@@ -85,7 +113,12 @@ export class ProductsService {
           { brand: { contains: search, mode: 'insensitive' } },
         ],
       }),
-      ...(categoryId && { categoryId }),
+      ...(categoryId && {
+        OR: [
+          { categoryId },
+          { category: { slug: categoryId } },
+        ],
+      }),
       ...(brand && { brand }),
       ...((minPrice !== undefined || maxPrice !== undefined) && {
         basePrice: {
@@ -112,9 +145,13 @@ export class ProductsService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
-          category: { select: { id: true, name: true, slug: true } },
-          images: { where: { isPrimary: true }, take: 1 }, // Only get primary image for listing
-          variants: { 
+          category: { select: { id: true, name: true, slug: true, hasVariants: true } },
+          images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }], take: 5 },
+          options: {
+            orderBy: { position: 'asc' },
+            include: { values: { orderBy: { value: 'asc' } } }
+          },
+          variants: {
             where: isPublic ? { isActive: true } : undefined,
             include: { inventory: { select: { quantity: true } } }
           },
@@ -192,6 +229,26 @@ export class ProductsService {
 
       return created;
     });
+
+    // Broadcast to customers & notify staff with staff ID
+    try {
+      const { NotificationsService } = await import('../notifications/notifications.service');
+      await NotificationsService.broadcastToAll({
+        type: 'GENERAL',
+        title: '✨ New Hardware Launch!',
+        message: `Introducing ${product.name}. Starting at $${product.basePrice}. Explore next-gen specs today!`,
+        data: { productId: product.id, productName: product.name, basePrice: product.basePrice, kind: 'NEW_PRODUCT' },
+      });
+
+      await NotificationsService.broadcastToRoles(['ADMIN', 'PRODUCT_MANAGER'], {
+        type: 'SUCCESS',
+        title: 'New Product Added',
+        message: `Staff (ID: ${adminUserId}) created new product '${product.name}' (Product ID: ${product.id}).`,
+        data: { staffId: adminUserId, productId: product.id, kind: 'STAFF_PRODUCT_ADDED' },
+      });
+    } catch (e) {
+      // ignore
+    }
 
     return product;
   }

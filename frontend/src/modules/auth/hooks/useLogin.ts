@@ -13,15 +13,17 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => loginUser(data),
     onSuccess: (res) => {
-      const { token, user } = res.data;
+      const { accessToken, user } = res.data;
+      const profile = user.staffProfile || user.customerProfile;
       login(
-        token,
+        accessToken,
         {
           id: user.id,
           email: user.email,
           role: user.role as RoleName,
-          firstName: user.customerProfile?.firstName,
-          lastName: user.customerProfile?.lastName,
+          firstName: profile?.firstName,
+          lastName: profile?.lastName,
+          staffProfile: user.staffProfile ? { phone: user.staffProfile.phone } : undefined,
         },
         user.permissions,
       );

@@ -24,7 +24,7 @@ export interface AdminDashboardData {
     totalOrders: number;
     totalRevenue: string;
     totalCustomers: number;
-    totalProductManagers: number;
+    totalStaff: number;
     totalAdmins: number;
   };
   recentOrders: Array<{
@@ -32,7 +32,30 @@ export interface AdminDashboardData {
     orderNumber: string;
     status: string;
     total: string;
+    customerEmail: string;
     createdAt: string;
+  }>;
+  topProducts: Array<{
+    name: string;
+    sold: number;
+    revenue: string;
+  }>;
+}
+
+export interface SupportDashboardData {
+  overview: {
+    totalOpenTickets: number;
+    unassignedTickets: number;
+    myOpenTickets: number;
+    slaBreaches: number;
+  };
+  recentTickets: Array<{
+    id: string;
+    subject: string;
+    status: string;
+    customerEmail: string;
+    assignedTo: string;
+    updatedAt: string;
   }>;
 }
 
@@ -43,5 +66,10 @@ export async function getProductDashboard(): Promise<ProductDashboardData> {
 
 export async function getAdminDashboard(): Promise<AdminDashboardData> {
   const res = await api.get("/analytics/dashboard");
+  return res.data.data;
+}
+
+export async function getSupportDashboard(): Promise<SupportDashboardData> {
+  const res = await api.get("/analytics/support-dashboard");
   return res.data.data;
 }

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ProductsController } from '../products.controller';
+import { ProductOptionsController } from '../product-options.controller';
 import { validate } from '../../../middleware/validation.middleware';
 import { authMiddleware, optionalAuthMiddleware } from '../../../middleware/auth.middleware';
 import { permission } from '../../../middleware/permission.middleware';
@@ -19,7 +20,6 @@ const router = Router();
 
 // ── Public Routes ────────────────────────────────────────
 
-// Optional auth used to determine if requester is Admin (sees drafts) or Public (sees active only)
 router.get(
   '/',
   optionalAuthMiddleware,
@@ -84,6 +84,60 @@ router.delete(
   permission('product:update'),
   validate(z.object({ id: idParamSchema.shape.id, imageId: idParamSchema.shape.id }), 'params'),
   asyncHandler(ProductsController.deleteImage)
+);
+
+// ── Product Options (variant dimensions) ─────────────────
+
+// GET    /products/:productId/options           → list options + values
+// POST   /products/:productId/options           → create option
+// PATCH  /products/:productId/options/:optionId → rename option
+// DELETE /products/:productId/options/:optionId → delete option
+
+router.get(
+  '/:productId/options',
+  asyncHandler(ProductOptionsController.getOptions)
+);
+
+router.post(
+  '/:productId/options',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.createOption)
+);
+
+router.patch(
+  '/:productId/options/:optionId',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.updateOption)
+);
+
+router.delete(
+  '/:productId/options/:optionId',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.deleteOption)
+);
+
+// ── Option Values ─────────────────────────────────────────
+
+// POST   /products/:productId/options/:optionId/values            → add value
+// PATCH  /products/:productId/options/:optionId/values/:valueId   → update value
+// DELETE /products/:productId/options/:optionId/values/:valueId   → delete value
+
+router.post(
+  '/:productId/options/:optionId/values',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.createValue)
+);
+
+router.patch(
+  '/:productId/options/:optionId/values/:valueId',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.updateValue)
+);
+
+router.delete(
+  '/:productId/options/:optionId/values/:valueId',
+  permission('product:update'),
+  asyncHandler(ProductOptionsController.deleteValue)
 );
 
 export default router;

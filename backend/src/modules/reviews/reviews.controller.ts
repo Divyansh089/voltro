@@ -9,9 +9,11 @@ export class ReviewsController {
 
   static async findProductReviews(req: Request, res: Response) {
     const query = req.query as any;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const { total, reviews } = await ReviewsService.findAll({
-      page: query.page,
-      limit: query.limit,
+      page,
+      limit,
       productId: req.params.productId as string,
       rating: query.rating,
       sortBy: query.sortBy || 'createdAt',
@@ -19,7 +21,7 @@ export class ReviewsController {
       isApprovedOnly: true,
     });
     res.status(HttpStatus.OK).json(
-      sendSuccess(reviews, 'Reviews retrieved successfully', HttpStatus.OK, calculatePagination(query.page, query.limit, total))
+      sendSuccess(reviews, 'Reviews retrieved successfully', HttpStatus.OK, calculatePagination(page, limit, total))
     );
   }
 

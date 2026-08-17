@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useLogin } from "@/modules/auth/hooks/useLogin";
 
@@ -21,17 +21,35 @@ function Field({
   onChange: (v: string) => void;
   required?: boolean;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === "password";
+  const inputType = isPasswordField ? (showPassword ? "text" : "password") : type;
+
   return (
     <label className="block">
       <span className="text-xs font-medium text-ink-soft">{label}</span>
-      <input
-        type={type}
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1.5 h-11 w-full rounded-xl border border-ink/10 bg-white/70 px-4 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-2 focus:ring-neon/40"
-      />
+      <div className="relative mt-1.5">
+        <input
+          type={inputType}
+          required={required}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`h-11 w-full rounded-xl border border-ink/10 bg-white/70 pl-4 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-2 focus:ring-neon/40 ${
+            isPasswordField ? "pr-11" : "pr-4"
+          }`}
+        />
+        {isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-ink-muted hover:text-ink transition"
+            title={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
+      </div>
     </label>
   );
 }
@@ -39,12 +57,13 @@ function Field({
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const loginMutation = useLogin();
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    loginMutation.mutate({ email, password });
+    loginMutation.mutate({ email, password, rememberMe });
   };
 
   return (
@@ -78,8 +97,14 @@ export default function LoginPage() {
             />
 
             <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 text-ink-soft">
-                <input type="checkbox" className="accent-[#CCFF00]" /> Remember me
+              <label className="flex items-center gap-2 text-ink-soft cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="accent-[#CCFF00] h-4 w-4 rounded cursor-pointer"
+                />{" "}
+                Remember me
               </label>
               <a href="#" className="font-medium text-ink hover:underline">
                 Forgot password?

@@ -2,381 +2,1088 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
-import { ShoppingCart, Heart, Star, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
-import { findProduct, ALL_CATEGORY_PRODUCTS, PRODUCTS } from "@/lib/data";
+import {
+  ShoppingCart,
+  Zap,
+  Heart,
+  Star,
+  ChevronRight,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
+  Plus,
+  Pencil,
+  XCircle,
+  MessageSquare,
+} from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import { useCart } from "@/store/cart.store";
 import { useWishlist } from "@/store/wishlist.store";
+import { useAuth } from "@/providers/AuthProvider";
+import { useProductDetail } from "@/modules/products/hooks/useProducts";
+import { CATEGORY_PREVIEWS } from "@/lib/data";
+import api from "@/lib/api";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string;
-  const product = findProduct(id) || null;
-  if (!product) {
-    return {
-      notFound: true,
-    };
-  }
   return {
     props: {
-      product,
+      productId: id || null,
     },
   };
 };
 
-const COLOR_OPTIONS = ["#2563EB", "#F59E0B", "#10B981", "#EF4444", "#06B6D4"];
+const getColorSwatch = (name: string) => {
+  if (!name) return "linear-gradient(135deg, #CBD5E1, #94A3B8)";
+  const lower = name.toLowerCase().trim();
 
-const REVIEW_POOL = [
-  {
-    name: "Ryman Khan",
-    rating: 4.6,
-    text: "Sound stage is wide and natural. Battery life genuinely changed my routine on long flights.",
-    ts: "1 month ago",
-  },
-  {
-    name: "Anwen Davin",
-    rating: 4.7,
-    text: "Comfortable for long sessions and the companion app is incredibly clean. ANC is class-leading.",
-    ts: "3 weeks ago",
-  },
-  {
-    name: "Jenn Moyca",
-    rating: 4.5,
-    text: "Premium build and the matte finish feels great in hand. Wish the case was slightly smaller.",
-    ts: "2 weeks ago",
-  },
-  {
-    name: "Alula Osiza",
-    rating: 4.7,
-    text: "Setup took two minutes and it just works across every Voltra device I own.",
-    ts: "1 month ago",
-  },
-];
-
-/* Deterministic dummy detail generator per product */
-function getProductDetails(p: { id: string; category: string; name: string; price: number }) {
-  const seed = p.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const pick = <T,>(arr: T[]) => arr[seed % arr.length];
-
-  const materials = [
-    "Aerospace aluminum",
-    "Recycled titanium",
-    "Soft-touch polymer",
-    "Brushed steel",
-    "Carbon-fiber composite",
-  ];
-  const batteries = [
-    "40h playtime",
-    "26h playtime",
-    "All-day battery",
-    "60h standby",
-    "Fast-charge 18W",
-  ];
-  const warranties = [
-    "2 years limited",
-    "1 year limited",
-    "3 years premium care",
-    "1 year + 90d returns",
-  ];
-  const origins = [
-    "Designed in Oslo",
-    "Designed in Tokyo",
-    "Designed in Berlin",
-    "Designed in Seoul",
-  ];
-  const connectivity = [
-    "Bluetooth 5.3 / USB-C",
-    "Wi-Fi 6E / USB-C",
-    "USB-C / 3.5mm",
-    "Wireless + USB-C",
-  ];
-
-  return {
-    sku: `VLT-${p.id.toUpperCase()}-${(seed % 900) + 100}`,
-    color: pick(["Midnight", "Cloud", "Mint", "Coral", "Aurum", "Pearl"]),
-    brand: "Voltra",
-    material: pick(materials),
-    battery: pick(batteries),
-    warranty: pick(warranties),
-    origin: pick(origins),
-    connectivity: pick(connectivity),
-    inStock: seed % 7 !== 0,
-    description:
-      `The ${p.name} is engineered for everyday brilliance — pairing the refined ${pick(materials).toLowerCase()} chassis with Voltra's signature tactile feedback. ` +
-      `Each unit is calibrated in-house, tuned for the ${p.category.toLowerCase()} workflow you actually live in, and built to age gracefully across thousands of hours of use.`,
+  const knownMap: Record<string, string> = {
+    rose: "linear-gradient(135deg, #F4A460, #FFC0CB, #E8A7A1)",
+    silver: "linear-gradient(135deg, #E2E8F0, #F8FAFC, #94A3B8)",
+    emerald: "#059669",
+    "phantom black": "#09090B",
+    black: "#09090B",
+    "space gray": "linear-gradient(135deg, #475569, #1E293B)",
+    "space grey": "linear-gradient(135deg, #475569, #1E293B)",
+    midnight: "#0F172A",
+    starlight: "linear-gradient(135deg, #FAF5FF, #FEF08A, #FEF3C7)",
+    gold: "linear-gradient(135deg, #FCD34D, #F59E0B, #B45309)",
+    purple: "#7E22CE",
+    "deep purple": "#581C87",
+    titanium: "linear-gradient(135deg, #94A3B8, #475569)",
+    "natural titanium": "linear-gradient(135deg, #CBD5E1, #94A3B8)",
+    "desert titanium": "linear-gradient(135deg, #E2E8F0, #D97706)",
+    red: "#EF4444",
+    blue: "#3B82F6",
+    "sierra blue": "#60A5FA",
+    green: "#22C55E",
+    white: "#FFFFFF",
+    yellow: "#FACC15",
+    pink: "#EC4899",
+    orange: "#F97316",
   };
+
+  for (const [k, v] of Object.entries(knownMap)) {
+    if (lower.includes(k)) return v;
+  }
+
+  if (/^#([0-9a-f]{3}){1,2}$/i.test(name)) return name;
+  return "linear-gradient(135deg, #CBD5E1, #64748B)";
+};
+
+function FormattedDescription({ text }: { text: string }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let currentList: React.ReactNode[] = [];
+
+  const flushList = (key: string) => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={key} className="space-y-1.5 my-2.5 pl-1">
+          {currentList}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  const parseInlineBold = (str: string) => {
+    const parts = str.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={idx} className="font-bold text-ink">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList(`list-${idx}`);
+      return;
+    }
+
+    if (trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
+      flushList(`list-${idx}`);
+      const headingText = trimmed.replace(/^#+\s*/, "");
+      elements.push(
+        <h4 key={`h-${idx}`} className="font-display text-sm md:text-base font-bold text-ink mt-5 mb-2 uppercase tracking-wide">
+          {parseInlineBold(headingText)}
+        </h4>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith("* ") || trimmed.startsWith("• ") || trimmed.startsWith("- ")) {
+      const itemText = trimmed.replace(/^[\*\•\-]\s*/, "");
+      currentList.push(
+        <li key={`item-${idx}`} className="flex items-start gap-2 text-sm text-ink-soft">
+          <span className="text-neon-dark font-extrabold shrink-0 mt-0.5">•</span>
+          <span>{parseInlineBold(itemText)}</span>
+        </li>
+      );
+      return;
+    }
+
+    flushList(`list-${idx}`);
+    elements.push(
+      <p key={`p-${idx}`} className="text-sm leading-relaxed text-ink-soft my-1.5">
+        {parseInlineBold(trimmed)}
+      </p>
+    );
+  });
+
+  flushList(`list-final`);
+
+  return <div className="space-y-1">{elements}</div>;
 }
 
-export default function ProductDetail({
-  product,
-}: {
-  product: NonNullable<ReturnType<typeof findProduct>>;
-}) {
+export default function ProductDetailPage({ productId: serverProductId }: { productId: string }) {
+  const router = useRouter();
+  const id = (router.query.id as string) || serverProductId;
+
+  const { data: product, isLoading, isError } = useProductDetail(id);
+  const { user } = useAuth();
+
   const cart = useCart();
   const wish = useWishlist();
-  const router = useRouter();
-  const liked = wish.has(product.id);
-  const details = getProductDetails(product);
 
-  /* Build a small thumbnail set from sibling products in the same category */
-  const siblings = ALL_CATEGORY_PRODUCTS.filter(
-    (p) => p.category === product.category && p.id !== product.id,
-  ).slice(0, 4);
-  const fallbackSiblings = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
-  const thumbs = [product, ...(siblings.length ? siblings : fallbackSiblings)].slice(0, 5);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [addedToast, setAddedToast] = useState(false);
 
-  const [selectedThumb, setSelectedThumb] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(0);
-  const activeImage = thumbs[selectedThumb]?.image ?? product.image;
+  // Reviews State loaded dynamically from PostgreSQL Database
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [authorName, setAuthorName] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Fetch real product-specific reviews from PostgreSQL database
+  const fetchProductReviews = async (prodId: string) => {
+    if (!prodId) return;
+    setIsLoadingReviews(true);
+    try {
+      const res: any = await api.get(`/reviews/product/${prodId}`);
+      const payload = res.data?.data || res.data;
+      const fetched = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload?.reviews)
+        ? payload.reviews
+        : [];
+
+      if (Array.isArray(fetched)) {
+        const formatted = fetched.map((r: any) => {
+          const uProfile = r.user?.customerProfile || r.user?.staffProfile;
+          const uName =
+            `${uProfile?.firstName || ""} ${uProfile?.lastName || ""}`.trim() ||
+            r.user?.email?.split("@")[0] ||
+            "Verified Buyer";
+          return {
+            id: r.id,
+            userId: r.userId || r.user?.id,
+            author: uName,
+            avatarUrl: r.user?.avatarUrl || null,
+            rating: r.rating,
+            date: new Date(r.createdAt || Date.now()).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            }),
+            verified: r.isVerifiedPurchase ?? true,
+            title: r.title || "Verified Review",
+            content: r.comment || "",
+          };
+        });
+        setReviewsList(formatted);
+      } else {
+        setReviewsList([]);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch product reviews:", err);
+      setReviewsList([]);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    const targetId = product?.id || id;
+    if (targetId) {
+      fetchProductReviews(targetId);
+    }
+  }, [id, product?.id]);
+
+  // Auto fill logged in user name
+  useEffect(() => {
+    if (user) {
+      const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email.split("@")[0];
+      setAuthorName(name);
+    }
+  }, [user]);
+
+  const liked = product ? wish.has(product.id) : false;
+
+  // Option Groups parsing
+  const optionGroups = useMemo(() => {
+    if (!product) return [];
+
+    if (product.options && product.options.length > 0) {
+      return product.options.map((opt: any) => ({
+        name: opt.name || "Option",
+        values: (opt.values || []).map((v: any) => v.value || v),
+      }));
+    }
+
+    if (product.variants && product.variants.length > 0) {
+      const groupsMap: Record<string, Set<string>> = {};
+
+      product.variants.forEach((v: any) => {
+        if (v.options && Array.isArray(v.options) && v.options.length > 0) {
+          v.options.forEach((o: any) => {
+            const key = o.optionName || "Option";
+            if (!groupsMap[key]) groupsMap[key] = new Set();
+            groupsMap[key].add(o.value);
+          });
+        } else if (v.name) {
+          const parts = v.name.split("/").map((s: string) => s.trim());
+          if (parts.length === 1) {
+            const key = "Configuration";
+            if (!groupsMap[key]) groupsMap[key] = new Set();
+            groupsMap[key].add(parts[0]);
+          } else {
+            parts.forEach((part: string, idx: number) => {
+              let key = "Option";
+              if (idx === 0) key = "Color";
+              else if (idx === 1) key = "RAM";
+              else if (idx === 2) key = "Storage";
+              else key = `Specification ${idx + 1}`;
+
+              if (!groupsMap[key]) groupsMap[key] = new Set();
+              groupsMap[key].add(part);
+            });
+          }
+        }
+      });
+
+      return Object.entries(groupsMap).map(([name, valuesSet]) => ({
+        name,
+        values: Array.from(valuesSet),
+      }));
+    }
+
+    return [];
+  }, [product]);
+
+  // Selections state
+  const [selectedSelections, setSelectedSelections] = useState<Record<string, string>>({});
+
+  const handleSelectOption = (groupName: string, val: string) => {
+    setSelectedSelections((prev) => ({
+      ...prev,
+      [groupName]: val,
+    }));
+  };
+
+  const isAllOptionsSelected = useMemo(() => {
+    if (optionGroups.length === 0) return true;
+    return optionGroups.every((g: any) => !!selectedSelections[g.name]);
+  }, [optionGroups, selectedSelections]);
+
+  const basePrice = useMemo(() => {
+    if (product?.basePrice) return Number(product.basePrice);
+    if (product?.variants && product.variants.length > 0) {
+      const prices = product.variants.map((v: any) => Number(v.price));
+      return Math.min(...prices);
+    }
+    return 0;
+  }, [product]);
+
+  const activeVariant = useMemo(() => {
+    if (!product?.variants || product.variants.length === 0) return null;
+
+    if (product.variants.length === 1 && optionGroups.length === 0) {
+      return product.variants[0];
+    }
+
+    if (!isAllOptionsSelected) return null;
+
+    const selectedValuesList = Object.values(selectedSelections);
+
+    const matched = product.variants.find((v: any) => {
+      if (v.options && Array.isArray(v.options) && v.options.length > 0) {
+        return v.options.every((o: any) => selectedSelections[o.optionName] === o.value);
+      }
+      if (v.name) {
+        const parts = v.name.split("/").map((s: string) => s.trim().toLowerCase());
+        return selectedValuesList.every((val: string) => parts.includes(val.toLowerCase()));
+      }
+      return false;
+    });
+
+    return matched || null;
+  }, [product, optionGroups, selectedSelections, isAllOptionsSelected]);
+
+  const hasValidVariant = !!activeVariant || (optionGroups.length === 0 && !!product?.variants?.[0]);
+
+  const itemizedBreakdown = useMemo(() => {
+    if (!product || !optionGroups) return [];
+    const list: { groupName: string; valueName: string; delta: number; formattedDelta: string }[] = [];
+
+    optionGroups.forEach((group: any) => {
+      const selectedVal = selectedSelections[group.name];
+      if (!selectedVal) return;
+
+      let delta = 0;
+      let foundDelta = false;
+
+      if (activeVariant?.options) {
+        const opt = activeVariant.options.find(
+          (o: any) => o.optionName?.toLowerCase() === group.name.toLowerCase() && o.value?.toLowerCase() === selectedVal.toLowerCase()
+        );
+        if (opt && opt.priceDelta !== undefined) {
+          delta = Number(opt.priceDelta);
+          foundDelta = true;
+        }
+      }
+
+      if (!foundDelta && product.options) {
+        const optObj = product.options.find((o: any) => o.name?.toLowerCase() === group.name.toLowerCase());
+        if (optObj) {
+          const valObj = optObj.values?.find((v: any) => v.value?.toLowerCase() === selectedVal.toLowerCase());
+          if (valObj && valObj.priceDelta !== undefined) {
+            delta = Number(valObj.priceDelta);
+            foundDelta = true;
+          }
+        }
+      }
+
+      let formattedDelta = "Included";
+      if (delta > 0) {
+        formattedDelta = `+$${delta.toFixed(2)}`;
+      } else if (delta < 0) {
+        formattedDelta = `-$${Math.abs(delta).toFixed(2)}`;
+      }
+
+      list.push({
+        groupName: group.name,
+        valueName: selectedVal,
+        delta,
+        formattedDelta,
+      });
+    });
+
+    return list;
+  }, [product, optionGroups, selectedSelections, activeVariant]);
+
+  const sumOfOptionDeltas = useMemo(() => {
+    return itemizedBreakdown.reduce((acc, item) => acc + (item.delta || 0), 0);
+  }, [itemizedBreakdown]);
+
+  const currentPrice = useMemo(() => {
+    if (activeVariant) return Number(activeVariant.price);
+    return basePrice + sumOfOptionDeltas;
+  }, [activeVariant, basePrice, sumOfOptionDeltas]);
+
+  const deltaPrice = Math.max(0, currentPrice - basePrice);
+
+  const selectedSpecsText = useMemo(() => {
+    const vals = Object.values(selectedSelections);
+    return vals.length > 0 ? vals.join(" / ") : "Select options";
+  }, [selectedSelections]);
+
+  const stockAvailable = activeVariant?.inventory?.quantity ?? (activeVariant ? 15 : 0);
+  const isOutOfStock = !hasValidVariant || stockAvailable <= 0;
+
+  const getOptionPriceTag = (groupName: string, val: string) => {
+    if (!product) return null;
+
+    // 1. Look up in product.options for exact priceDelta
+    const optObj = product.options?.find((o: any) => o.name?.toLowerCase() === groupName.toLowerCase());
+    if (optObj) {
+      const valObj = optObj.values?.find((v: any) => v.value?.toLowerCase() === val.toLowerCase());
+      if (valObj && valObj.priceDelta !== undefined) {
+        const delta = Number(valObj.priceDelta);
+        if (delta > 0) return `+$${delta.toFixed(0)}`;
+        if (delta === 0) return null;
+      }
+    }
+
+    // 2. Check active variant's options
+    if (activeVariant?.options) {
+      const matchedOpt = activeVariant.options.find(
+        (o: any) => o.optionName?.toLowerCase() === groupName.toLowerCase() && o.value?.toLowerCase() === val.toLowerCase()
+      );
+      if (matchedOpt && matchedOpt.priceDelta !== undefined) {
+        const delta = Number(matchedOpt.priceDelta);
+        if (delta > 0) return `+$${delta.toFixed(0)}`;
+        if (delta === 0) return null;
+      }
+    }
+
+    // Fallback: calculate baseline relative price
+    const matching = (product.variants || []).filter((v: any) => {
+      if (v.options && Array.isArray(v.options)) {
+        return v.options.some((o: any) => o.value?.toLowerCase() === val.toLowerCase());
+      }
+      if (v.name) {
+        const parts = v.name.split("/").map((s: string) => s.trim().toLowerCase());
+        return parts.includes(val.toLowerCase());
+      }
+      return false;
+    });
+
+    if (matching.length === 0) return null;
+
+    const minPrice = Math.min(...matching.map((v: any) => Number(v.price)));
+    const diff = minPrice - basePrice;
+
+    if (diff > 0) return `+$${diff.toFixed(0)}`;
+    return null;
+  };
+
+  const images = useMemo(() => {
+    if (!product) return [];
+    if (product.images && product.images.length > 0) {
+      return product.images.map((img: any) => img.url || img.imageUrl);
+    }
+    const catSlug = product.category?.slug || "laptop";
+    return [CATEGORY_PREVIEWS[catSlug] || "/placeholder.png"];
+  }, [product]);
+
+  const activeImage = images[selectedImageIndex] || images[0] || "/placeholder.png";
+
+  // Calculated average rating from PostgreSQL DB reviews
+  const avgRating = useMemo(() => {
+    if (reviewsList.length === 0) return Number(product?.averageRating || 5.0);
+    const sum = reviewsList.reduce((acc, r) => acc + r.rating, 0);
+    return Number((sum / reviewsList.length).toFixed(1));
+  }, [reviewsList, product]);
+
+  const handleAddToCart = () => {
+    if (!hasValidVariant || isOutOfStock) return;
+
+    cart.add({
+      id: product.id,
+      name: `${product.name} (${selectedSpecsText})`,
+      price: currentPrice,
+      image: activeImage,
+      variantId: activeVariant?.id,
+    } as any);
+
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 3000);
+  };
+
+  const handleBuyNow = () => {
+    if (!hasValidVariant || isOutOfStock) return;
+
+    const buyNowPayload = {
+      id: product.id,
+      name: `${product.name} (${selectedSpecsText})`,
+      price: currentPrice,
+      image: activeImage,
+      variantId: activeVariant?.id || product.id,
+      qty: 1,
+    };
+
+    sessionStorage.setItem("voltra_buy_now_item", JSON.stringify(buyNowPayload));
+    router.push("/customer/checkout?buyNow=true");
+  };
+
+  // Detect if current logged-in user already has a review on this product
+  const myExistingReview = useMemo(() => {
+    if (!user?.id) return null;
+    return reviewsList.find((r: any) => r.userId === user.id) || null;
+  }, [reviewsList, user?.id]);
+
+  const isEditMode = !!myExistingReview;
+
+  // Pre-fill form when switching to edit mode
+  const handleOpenReviewForm = () => {
+    if (isEditMode && myExistingReview) {
+      setNewRating(myExistingReview.rating);
+      setNewTitle(myExistingReview.title || "");
+      setNewContent(myExistingReview.content || "");
+    } else {
+      setNewRating(5);
+      setNewTitle("");
+      setNewContent("");
+    }
+    setShowReviewForm(!showReviewForm);
+  };
+
+  // Post or Update review in PostgreSQL DB & reload reviews
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle || !newContent || !authorName || isSubmittingReview) return;
+
+    setIsSubmittingReview(true);
+
+    try {
+      if (isEditMode && myExistingReview) {
+        await api.patch(`/reviews/${myExistingReview.id}`, {
+          rating: newRating,
+          title: newTitle,
+          comment: newContent,
+        });
+      } else {
+        await api.post("/reviews", {
+          productId: product.id,
+          rating: newRating,
+          title: newTitle,
+          comment: newContent,
+        });
+      }
+      await fetchProductReviews(product.id);
+      setNewTitle("");
+      setNewContent("");
+      setShowReviewForm(false);
+    } catch (err: any) {
+      console.warn("Review submit error:", err?.response?.data?.message || err);
+      if (!isEditMode) {
+        const newRevLocal = {
+          id: `rev-${Date.now()}`,
+          userId: user?.id,
+          author: authorName,
+          avatarUrl: user?.avatarUrl || null,
+          rating: newRating,
+          date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+          verified: true,
+          title: newTitle,
+          content: newContent,
+        };
+        setReviewsList([newRevLocal, ...reviewsList]);
+      }
+      setNewTitle("");
+      setNewContent("");
+      setShowReviewForm(false);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-[1400px] items-center justify-center px-4 py-20 text-ink-soft">
+        <div className="flex items-center gap-3 font-semibold">
+          <Loader2 size={24} className="animate-spin text-neon-dark" /> Loading product details...
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !product) {
+    return (
+      <div className="mx-auto max-w-[1400px] px-4 py-20 text-center">
+        <AlertCircle size={48} className="mx-auto mb-3 text-rose-500" />
+        <h1 className="font-display text-2xl font-bold text-ink">Product Not Found</h1>
+        <p className="mt-1 text-sm text-ink-soft">The product requested does not exist or was removed.</p>
+        <Link href="/" className="btn-neon mt-6 inline-flex px-6 py-2.5 text-sm font-semibold">
+          Back to Shop
+        </Link>
+      </div>
+    );
+  }
+
+  const categoryName = product.category?.name || "Hardware";
+  const categorySlug = product.category?.slug || "all";
 
   return (
     <>
       <Head>
         <title>{`${product.name} — Voltra`}</title>
-        <meta name="description" content={details.description} />
+        <meta name="description" content={product.description} />
       </Head>
-      <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-16">
-        {/* Breadcrumb */}
-        <div className="mb-4 flex items-center gap-2 text-xs text-ink-soft">
-          <Link href="/" className="hover:text-ink">
+
+      {addedToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-2xl animate-bounce">
+          <CheckCircle2 size={18} className="text-[#CCFF00]" />
+          <span className="text-xs font-bold">Item added to your cart!</span>
+          <Link href="/customer/cart" className="ml-2 underline text-xs font-extrabold text-[#CCFF00]">
+            View Cart
+          </Link>
+        </div>
+      )}
+
+      <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-20">
+        {/* Breadcrumbs */}
+        <div className="mb-6 flex items-center gap-2 text-xs font-semibold text-ink-soft">
+          <Link href="/" className="hover:text-ink transition">
             Home
           </Link>
           <ChevronRight size={12} />
-          <Link href="/categories" className="hover:text-ink">
-            Categories
+          <Link href={`/categories/${categorySlug}`} className="hover:text-ink transition">
+            {categoryName}
           </Link>
           <ChevronRight size={12} />
-          <span className="text-ink">{product.category}</span>
+          <span className="text-ink truncate max-w-[200px]">{product.name}</span>
         </div>
 
-        {/* Title bar */}
-        <div className="glass mb-5 flex items-center justify-between p-5">
-          <h1 className="font-display text-3xl font-bold text-ink capitalize">
-            {product.category}
-          </h1>
-          <div className="flex items-center gap-2 text-sm text-ink-soft">
-            Sort by:{" "}
-            <button className="rounded-full bg-white/70 px-3 py-1.5 text-ink">New Access</button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-12 gap-5">
-          {/* LEFT — gallery + details */}
-          <div className="col-span-12 lg:col-span-8 space-y-5">
-            <div className="glass p-5">
-              {/* Main image */}
-              <div
-                className="relative grid h-[420px] place-items-center overflow-hidden rounded-3xl"
-                style={{
-                  background: `linear-gradient(135deg, ${product.color}28, #ffffff80 70%, #EEF2F7)`,
-                }}
-              >
-                <div className="absolute h-72 w-72 rounded-full bg-white/70 blur-2xl" />
-                <button
-                  onClick={() => wish.toggle(product.id)}
-                  className={`absolute right-5 top-5 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/85 shadow ${
-                    liked ? "text-rose-500" : "text-ink hover:text-rose-500"
-                  }`}
-                  aria-label="Like"
-                >
-                  <Heart size={15} fill={liked ? "currentColor" : "none"} />
-                </button>
-                <img
-                  src={activeImage}
-                  alt={product.name}
-                  width={768}
-                  height={768}
-                  className="relative h-80 w-80 object-contain drop-shadow-2xl"
-                />
-                <span className="absolute left-10 top-10 h-2 w-2 rounded-full bg-ink/20" />
-                <span className="absolute right-12 top-20 h-1.5 w-1.5 rounded-full bg-ink/20" />
-                <span className="absolute bottom-16 left-16 h-2.5 w-2.5 rounded-full bg-ink/20" />
-              </div>
-
-              {/* Horizontal thumbnail rail below main image */}
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  onClick={() => setSelectedThumb((i) => Math.max(0, i - 1))}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70 text-ink hover:bg-white"
-                  aria-label="Previous"
-                >
-                  <ChevronLeft size={14} />
-                </button>
-                <div className="flex flex-1 gap-3 overflow-x-auto">
-                  {thumbs.map((t, i) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedThumb(i)}
-                      className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border transition ${
-                        selectedThumb === i
-                          ? "border-ink bg-white"
-                          : "border-transparent bg-white/60 hover:bg-white"
-                      }`}
-                    >
-                      <img
-                        src={t.image}
-                        alt={t.name}
-                        className="h-14 w-14 object-contain"
-                        loading="lazy"
-                      />
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setSelectedThumb((i) => Math.min(thumbs.length - 1, i + 1))}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70 text-ink hover:bg-white"
-                  aria-label="Next"
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Product Details panel */}
-            <div className="glass p-6 md:p-8">
-              <h2 className="font-display text-2xl font-bold text-ink">Product Details</h2>
-              <p className="mt-3 text-sm leading-relaxed text-ink-soft">{details.description}</p>
-
-              <h3 className="mt-8 font-display text-xl font-bold text-ink">Details</h3>
-              <dl className="mt-4 grid grid-cols-1 gap-y-3 text-sm md:grid-cols-2 md:gap-x-10">
-                {[
-                  ["Color", details.color],
-                  ["Brand", details.brand],
-                  ["Category", product.category],
-                  ["Material", details.material],
-                  ["Battery", details.battery],
-                  ["Connectivity", details.connectivity],
-                  ["Warranty", details.warranty],
-                  ["Origin", details.origin],
-                  ["SKU", details.sku],
-                  ["Rating", `${product.rating} (${product.reviews} reviews)`],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 border-b border-ink/5 pb-2">
-                    <dt className="text-ink-soft">{k}</dt>
-                    <dd className="text-right font-medium text-ink">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-
-          {/* RIGHT — buy box + reviews */}
-          <div className="col-span-12 lg:col-span-4 space-y-5">
-            <div className="glass p-6">
-              <span className="chip">{product.category}</span>
-              <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ink">
-                {product.name}
-              </h2>
-              <div className="mt-2 flex items-center gap-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    size={14}
-                    className={
-                      i < Math.round(product.rating)
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-ink/20"
-                    }
-                  />
-                ))}
-                <span className="text-xs text-ink-soft">{product.rating}</span>
-              </div>
-
-              <div className="mt-4 font-display text-4xl font-bold text-ink">
-                ${product.price.toFixed(2)}
-              </div>
-
+        <div className="grid grid-cols-12 gap-8">
+          {/* Gallery Column */}
+          <div className="col-span-12 lg:col-span-7 space-y-6">
+            <div className="glass relative flex h-[460px] items-center justify-center overflow-hidden p-6 rounded-3xl">
               <button
-                onClick={() => cart.add(product)}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-ink/90"
+                onClick={() => wish.toggle(product.id)}
+                className={`absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-md transition ${
+                  liked ? "text-rose-500" : "text-ink hover:text-rose-500"
+                }`}
+                aria-label="Wishlist"
               >
-                <ShoppingCart size={16} /> add to cart
+                <Heart size={18} fill={liked ? "currentColor" : "none"} />
               </button>
 
-              <div className="mt-6">
-                <div className="text-sm font-semibold text-ink">Colors</div>
-                <div className="mt-3 flex gap-3">
-                  {COLOR_OPTIONS.map((c, i) => (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedColor(i)}
-                      aria-label={`Color ${i + 1}`}
-                      className={`h-8 w-8 rounded-full border-2 shadow transition ${
-                        selectedColor === i ? "border-ink scale-110" : "border-white"
-                      }`}
-                      style={{ background: c }}
-                    />
-                  ))}
-                </div>
-              </div>
+              <img
+                src={activeImage}
+                alt={product.name}
+                className="h-80 w-80 object-contain drop-shadow-2xl transition-all duration-300 hover:scale-105"
+              />
+            </div>
 
-              <div className="mt-6 flex items-center gap-2">
-                <button
-                  onClick={() => cart.add(product)}
-                  className="btn-neon inline-flex flex-1 items-center justify-center gap-2 py-3 text-sm"
-                >
-                  add to cart
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
-                    <ArrowUpRight size={14} />
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {images.map((imgUrl: string, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 transition ${
+                      selectedImageIndex === idx
+                        ? "border-neon bg-white shadow-md"
+                        : "border-transparent bg-white/60 hover:bg-white"
+                    }`}
+                  >
+                    <img src={imgUrl} alt={`${product.name} ${idx}`} className="h-14 w-14 object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Overview & Specs */}
+            <div className="glass p-6 md:p-8 rounded-3xl space-y-4">
+              <FormattedDescription text={product.description} />
+
+              {product.specifications && product.specifications.length > 0 && (
+                <div className="mt-6 border-t border-ink/5 pt-4">
+                  <h4 className="font-display text-base font-bold text-ink mb-3">Technical Specifications</h4>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                    {product.specifications.map((spec: any, i: number) => (
+                      <div key={i} className="flex justify-between py-1 border-b border-ink/5">
+                        <dt className="text-ink-soft font-medium">{spec.key}</dt>
+                        <dd className="font-bold text-ink">{spec.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Configurator Sidebar */}
+          <div className="col-span-12 lg:col-span-5 space-y-6">
+            <div className="glass p-6 md:p-8 rounded-3xl space-y-6">
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-neon/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neon-dark">
+                    {product.brand || "Voltra"}
                   </span>
-                </button>
-                <button
-                  onClick={() => wish.toggle(product.id)}
-                  className={`grid h-12 w-12 place-items-center rounded-full bg-white/70 ${
-                    liked ? "text-rose-500" : "text-ink hover:text-rose-500"
-                  }`}
-                  aria-label="Save"
-                >
-                  <Heart size={18} fill={liked ? "currentColor" : "none"} />
-                </button>
+
+                  <a href="#reviews-section" className="flex items-center gap-1.5 text-xs font-bold text-amber-500 hover:underline">
+                    <Star size={14} className="fill-amber-400 text-amber-400" />
+                    <span>{avgRating.toFixed(1)}</span>
+                    <span className="text-ink-muted">({reviewsList.length} reviews)</span>
+                  </a>
+                </div>
+
+                <h1 className="mt-3 font-display text-2xl md:text-3xl font-bold text-ink">
+                  {product.name}
+                </h1>
               </div>
 
-              <button
-                onClick={() => {
-                  cart.add(product);
-                  router.push("/checkout");
-                }}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-white/70 px-5 py-3 text-sm font-semibold text-ink hover:bg-white"
-              >
-                Buy now
-              </button>
+              {/* Options */}
+              {optionGroups.length > 0 && (
+                <div className="space-y-5 border-t border-ink/5 pt-4">
+                  {optionGroups.map((group: any) => {
+                    const currentSelectedVal = selectedSelections[group.name];
+                    const isColorGroup = /color|finish|hue|tone/i.test(group.name);
 
-              <div className="mt-4 flex items-center justify-between text-xs text-ink-soft">
-                <span>{details.inStock ? "✓ In stock — ships in 24h" : "Backorder — 5 days"}</span>
-                <span>{details.sku}</span>
-              </div>
-            </div>
+                    return (
+                      <div key={group.name} className="space-y-2.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-extrabold text-ink uppercase tracking-wider">
+                            Choose {group.name}
+                          </span>
+                          {currentSelectedVal && (
+                            <span className="font-semibold text-neon-dark text-[11px]">
+                              {currentSelectedVal}
+                            </span>
+                          )}
+                        </div>
 
-            {/* Reviews */}
-            <div className="glass p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display text-xl font-bold text-ink">
-                  User Reviews &amp; Comments
-                </h3>
-              </div>
-              <div className="mt-4 space-y-3">
-                {REVIEW_POOL.map((r) => (
-                  <div key={r.name} className="glass-soft flex gap-3 p-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#FCD9B6] to-[#3B2A20] text-xs font-semibold text-white">
-                      {r.name[0]}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-semibold text-ink">{r.name}</div>
-                        <div className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
-                          <Star size={11} className="fill-amber-400 text-amber-400" /> {r.rating}
+                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                          {group.values.map((val: any) => {
+                            const isSelected = currentSelectedVal === val;
+                            const colorSwatch = isColorGroup ? getColorSwatch(val) : null;
+                            const priceTag = getOptionPriceTag(group.name, val);
+
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => handleSelectOption(group.name, val)}
+                                className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all duration-200 ${
+                                  isSelected
+                                    ? "border-neon bg-neon/15 ring-2 ring-neon/40 shadow-md font-bold text-ink scale-[1.02]"
+                                    : "border-ink/10 bg-white/60 text-ink-soft hover:border-ink/30 hover:bg-white"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isColorGroup && (
+                                    <span
+                                      className="h-4 w-4 rounded-full border border-black/20 shadow-sm shrink-0"
+                                      style={{ background: colorSwatch || undefined }}
+                                    />
+                                  )}
+                                  <span className="text-xs font-semibold text-ink">{val}</span>
+                                </div>
+
+                                {priceTag && (
+                                  <span className="mt-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                    {priceTag}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{r.text}</p>
-                      <div className="mt-1 text-[10px] text-ink-muted">{r.ts}</div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Price & Stock Section */}
+              <div className="space-y-2 border-y border-ink/5 py-4">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="text-[10px] text-ink-muted block uppercase tracking-wider font-extrabold">
+                      Base Price
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-3xl font-extrabold text-ink">
+                        ${basePrice.toFixed(2)}
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <div>
+                    {!isAllOptionsSelected ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-700">
+                        Select options above
+                      </span>
+                    ) : !hasValidVariant ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1 text-xs font-extrabold text-rose-600 border border-rose-200">
+                        <XCircle size={14} /> Not Available
+                      </span>
+                    ) : isOutOfStock ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-600">
+                        <AlertCircle size={14} /> Out of stock
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-extrabold text-emerald-700">
+                        <CheckCircle2 size={14} /> {stockAvailable} available
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isAllOptionsSelected && (
+                  <div className="mt-4 rounded-2xl bg-white/80 p-4 border border-ink/10 space-y-2 text-xs shadow-sm">
+                    <div className="flex justify-between items-center text-ink-soft font-medium pb-1">
+                      <span>Base price</span>
+                      <span className="font-mono font-bold text-ink">${basePrice.toFixed(2)}</span>
+                    </div>
+
+                    {itemizedBreakdown.map((item) => (
+                      <div key={item.groupName} className="flex justify-between items-center text-ink-soft font-medium">
+                        <span>{item.groupName}: {item.valueName}</span>
+                        <span className={item.delta > 0 ? "font-mono font-bold text-emerald-700" : "font-mono font-medium text-ink-soft"}>
+                          {item.formattedDelta}
+                        </span>
+                      </div>
+                    ))}
+
+                    <div className="border-t border-ink/15 pt-2.5 flex justify-between items-center text-ink">
+                      <span className="font-extrabold text-xs text-ink uppercase tracking-wider">Total Price</span>
+                      <span className="font-display text-xl font-extrabold text-ink">
+                        ${currentPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <button className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-white/70 px-4 py-2 text-xs font-medium text-ink hover:bg-white">
-                Write a review
-              </button>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={!isAllOptionsSelected || !hasValidVariant || isOutOfStock}
+                  onClick={handleAddToCart}
+                  className="btn-neon w-full py-3.5 text-xs font-extrabold shadow-lg flex items-center justify-center gap-1.5 disabled:opacity-40 transition hover:scale-[1.01]"
+                >
+                  <ShoppingCart size={16} /> Add to Cart
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!isAllOptionsSelected || !hasValidVariant || isOutOfStock}
+                  onClick={handleBuyNow}
+                  className="w-full py-3.5 rounded-2xl bg-ink text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 hover:bg-slate-800 transition disabled:opacity-40 hover:scale-[1.01]"
+                >
+                  <Zap size={16} className="text-neon" /> Buy Now
+                </button>
+              </div>
+
+              {/* Value Props */}
+              <div className="grid grid-cols-3 gap-2 border-t border-ink/5 pt-4 text-center text-[11px] text-ink-soft">
+                <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-white/40">
+                  <Truck size={18} className="text-ink" />
+                  <span className="font-semibold text-ink">Free Shipping</span>
+                  <span>Express Global</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-white/40">
+                  <ShieldCheck size={18} className="text-ink" />
+                  <span className="font-semibold text-ink">2-Year Voltra</span>
+                  <span>Official Warranty</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-white/40">
+                  <RotateCcw size={18} className="text-ink" />
+                  <span className="font-semibold text-ink">30-Day Returns</span>
+                  <span>Money Back Guarantee</span>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* REAL POSTGRESQL CUSTOMER REVIEWS & RATINGS SECTION */}
+        <div id="reviews-section" className="mt-16 glass p-6 md:p-10 rounded-3xl space-y-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 pb-6">
+            <div>
+              <h3 className="font-display text-2xl font-bold text-ink">Customer Reviews</h3>
+              <p className="text-xs text-ink-soft mt-1">Real ratings and reviews from verified Voltra buyers</p>
+            </div>
+
+            <button
+              onClick={handleOpenReviewForm}
+              className="btn-neon px-5 py-2.5 text-xs font-bold flex items-center gap-2"
+            >
+              {isEditMode ? (
+                <><Pencil size={15} /> Edit Your Review</>
+              ) : (
+                <><Plus size={15} /> Write a Review</>
+              )}
+            </button>
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <form onSubmit={handleAddReview} className="rounded-2xl bg-white/80 p-6 border border-neon/40 shadow-xl space-y-4 animate-fadeIn">
+              <h4 className="font-display text-base font-bold text-ink">
+                {isEditMode ? "Update Your Review" : "Submit Your Product Review"}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink-soft mb-1">Your Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="h-10 w-full rounded-xl border border-ink/10 bg-white px-3 text-xs text-ink outline-none focus:border-neon focus:ring-2 focus:ring-neon/30 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink-soft mb-1">Rating</label>
+                  <div className="flex items-center gap-1.5 h-10 px-2">
+                    {[1, 2, 3, 4, 5].map((starIdx) => {
+                      const isActive = starIdx <= (hoverRating || newRating);
+                      return (
+                        <button
+                          key={starIdx}
+                          type="button"
+                          onClick={() => setNewRating(starIdx)}
+                          onMouseEnter={() => setHoverRating(starIdx)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="p-1 transition-all duration-200 hover:scale-125 focus:outline-none"
+                        >
+                          <Star
+                            size={22}
+                            className={`transition-all duration-200 ${
+                              isActive
+                                ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]"
+                                : "text-slate-300 fill-transparent hover:text-amber-300"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                    <span className="ml-2 text-xs font-extrabold text-ink">
+                      {hoverRating || newRating} / 5 Stars
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-soft mb-1">Review Title</label>
+                <input
+                  type="text"
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. Exceptional performance and battery life"
+                  className="h-10 w-full rounded-xl border border-ink/10 bg-white px-3 text-xs text-ink outline-none focus:border-neon focus:ring-2 focus:ring-neon/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-soft mb-1">Detailed Review</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={newContent}
+                  onChange={(e) => setNewContent(e.target.value)}
+                  placeholder="Share your detailed experience with this product..."
+                  className="w-full rounded-xl border border-ink/10 bg-white p-3 text-xs text-ink outline-none focus:border-neon focus:ring-2 focus:ring-neon/30"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowReviewForm(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:bg-ink/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReview}
+                  className="btn-neon px-5 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {isSubmittingReview ? "Submitting..." : isEditMode ? "Update Review" : "Post Review"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Rating Summary Card */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 rounded-2xl bg-white/50 border border-ink/5">
+            <div className="md:col-span-4 text-center md:text-left border-r-0 md:border-r border-ink/10 pr-0 md:pr-6">
+              <span className="font-display text-5xl font-extrabold text-ink block">
+                {avgRating.toFixed(1)}
+              </span>
+              <div className="flex items-center justify-center md:justify-start gap-1 my-1 text-amber-400">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={18}
+                    className={star <= Math.round(avgRating) ? "fill-amber-400" : "text-slate-300"}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-ink-soft">Based on {reviewsList.length} verified ratings</span>
+            </div>
+
+            <div className="md:col-span-8 space-y-1.5 text-xs">
+              {[5, 4, 3, 2, 1].map((stars) => {
+                const count = reviewsList.filter((r) => r.rating === stars).length;
+                const pct = reviewsList.length > 0 ? (count / reviewsList.length) * 100 : 0;
+                return (
+                  <div key={stars} className="flex items-center gap-3">
+                    <span className="w-12 text-ink-soft font-semibold">{stars} Stars</span>
+                    <div className="h-2 flex-1 rounded-full bg-ink/10 overflow-hidden">
+                      <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-8 text-right text-ink-muted font-mono">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reviews List from PostgreSQL DB */}
+          {isLoadingReviews ? (
+            <div className="flex justify-center py-8 text-xs text-ink-soft font-semibold gap-2 items-center">
+              <Loader2 size={16} className="animate-spin text-neon-dark" /> Loading verified reviews from database...
+            </div>
+          ) : reviewsList.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl bg-white/40 border border-ink/5 space-y-2">
+              <MessageSquare size={32} className="mx-auto text-ink-muted" />
+              <p className="text-xs font-bold text-ink">No reviews yet for this product</p>
+              <p className="text-[11px] text-ink-soft">Be the first verified customer to share your experience!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviewsList.map((rev) => (
+                <div key={rev.id} className="p-5 rounded-2xl bg-white/70 border border-ink/5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-ink text-white font-bold text-xs grid place-items-center shadow-sm">
+                        {rev.avatarUrl ? (
+                          <img src={rev.avatarUrl} alt={rev.author} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{rev.author?.[0]?.toUpperCase() || "U"}</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-bold text-ink text-xs block">{rev.author}</span>
+                        {rev.verified && (
+                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Verified Buyer
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[11px] text-ink-muted font-mono">{rev.date}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-amber-400 pt-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        size={13}
+                        className={s <= rev.rating ? "fill-amber-400" : "text-slate-300"}
+                      />
+                    ))}
+                  </div>
+
+                  <h5 className="font-display text-sm font-bold text-ink">{rev.title}</h5>
+                  <p className="text-xs leading-relaxed text-ink-soft">{rev.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>

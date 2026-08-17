@@ -42,10 +42,7 @@ const softDeleteModels = [
   'User',
   'Product',
   'Category',
-  'Variant',
-  'Order',
   'Address',
-  'Coupon',
   'SupportTicket',
 ];
 

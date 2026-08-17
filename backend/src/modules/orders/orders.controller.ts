@@ -44,9 +44,18 @@ export class OrdersController {
 
   static async cancelMyOrder(req: Request, res: Response) {
     const userId = (req as any).user.userId;
-    // Simple check to ensure user owns order before cancelling
     await OrdersService.findById(req.params.id as string, userId, false); 
-    const order = await OrdersService.updateStatus(req.params.id as string, 'CANCELLED', 'Cancelled by customer', userId, req.ip as string, req.get('user-agent') as string);
+    const reason = req.body?.reason || 'Cancelled by customer';
+    const description = req.body?.description || req.body?.notes || '';
+    const order = await OrdersService.updateStatus(
+      req.params.id as string,
+      'CANCELLED',
+      reason,
+      userId,
+      req.ip as string,
+      req.get('user-agent') as string,
+      description
+    );
     res.status(HttpStatus.OK).json(sendSuccess(order, 'Order cancelled successfully'));
   }
 

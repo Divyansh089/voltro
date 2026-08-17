@@ -21,14 +21,16 @@ export class AuthController {
    * Register a new customer
    */
   static async register(req: Request, res: Response) {
-    const user = await AuthService.register(
+    const { user, accessToken, refreshToken } = await AuthService.register(
       req.body,
       req.ip as string,
       req.get('user-agent') as string
     );
 
+    res.cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions());
+
     res.status(HttpStatus.CREATED).json(
-      sendSuccess(user, 'Registration successful', HttpStatus.CREATED)
+      sendSuccess({ user, accessToken }, 'Registration successful', HttpStatus.CREATED)
     );
   }
 
