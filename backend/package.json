@@ -11,7 +11,6 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
-    "prisma:seed": "tsx src/prisma/seed.ts",
     "prisma:studio": "prisma studio",
     "lint": "eslint src/",
     "test": "jest",
@@ -28,8 +27,7 @@
   "license": "UNLICENSED",
   "private": true,
   "prisma": {
-    "schema": "src/prisma/schema.prisma",
-    "seed": "tsx src/prisma/seed.ts"
+    "schema": "src/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
