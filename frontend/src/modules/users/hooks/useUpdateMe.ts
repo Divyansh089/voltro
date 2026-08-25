@@ -6,6 +6,7 @@ interface UpdateMeData {
   phone?: string;
   currentPassword?: string;
   newPassword?: string;
+  otpCode?: string;
 }
 
 export function useUpdateMe() {

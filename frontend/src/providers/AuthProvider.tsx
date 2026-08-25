@@ -71,7 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (err) {
-      console.error("Failed to refresh user profile", err);
+      console.warn("Session expired or unauthenticated:", err);
+      StorageService.clearAuth();
+      setUser(null);
+      setPermissions([]);
     }
   }, []);
 
