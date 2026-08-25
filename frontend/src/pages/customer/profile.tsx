@@ -13,6 +13,7 @@ import { useUploadAvatar } from "@/modules/users/hooks/useUploadAvatar";
 import { useMyNotifications, type NotificationItem } from "@/modules/notifications/hooks/useNotifications";
 import { OrderTrackingModal } from "@/components/customer/OrderTrackingModal";
 import { SupportQueryModal } from "@/components/customer/SupportQueryModal";
+import { OtpModal } from "@/components/shared/OtpModal";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { getCountryFlagIcon } from "@/components/ui/CountryFlags";
@@ -179,21 +180,33 @@ export default function Profile() {
       })
     : "May 2026";
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  // OTP Security Modal State
+  const [isSecurityOtpOpen, setIsSecurityOtpOpen] = useState(false);
+  const [pendingSecurityAction, setPendingSecurityAction] = useState<"PROFILE" | "PASSWORD" | null>(null);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileMsg("");
+
+    // If email is changing, trigger 6-digit OTP verification
+    if (email !== user.email) {
+      try {
+        await api.post("/users/me/request-otp");
+        setPendingSecurityAction("PROFILE");
+        setIsSecurityOtpOpen(true);
+      } catch (err: any) {
+        setProfileMsg(err?.response?.data?.message || "Failed to send verification OTP.");
+      }
+      return;
+    }
+
+    // Otherwise update phone directly
     updateMe.mutate(
-      { email, phone },
+      { phone },
       {
         onSuccess: () => {
-          if (email !== user.email) {
-            alert("Email changed successfully. Please log in again.");
-            logout();
-            router.push("/auth/login");
-          } else {
-            setProfileMsg("Contact info updated successfully!");
-            setTimeout(() => setProfileMsg(""), 3000);
-          }
+          setProfileMsg("Contact info updated successfully!");
+          setTimeout(() => setProfileMsg(""), 3000);
         },
         onError: (err: any) => {
           setProfileMsg(err?.response?.data?.message || "Failed to update profile");
@@ -202,7 +215,7 @@ export default function Profile() {
     );
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMsg("");
     if (newPassword !== confirmPassword) {
@@ -213,21 +226,56 @@ export default function Profile() {
       setPasswordMsg("All password fields are required");
       return;
     }
-    updateMe.mutate(
-      { currentPassword, newPassword },
-      {
-        onSuccess: () => {
-          setPasswordMsg("Password updated successfully!");
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-          setTimeout(() => setPasswordMsg(""), 3000);
-        },
-        onError: (err: any) => {
-          setPasswordMsg(err?.response?.data?.message || "Failed to update password");
-        },
-      }
-    );
+
+    try {
+      await api.post("/users/me/request-otp");
+      setPendingSecurityAction("PASSWORD");
+      setIsSecurityOtpOpen(true);
+    } catch (err: any) {
+      setPasswordMsg(err?.response?.data?.message || "Failed to send verification OTP.");
+    }
+  };
+
+  const handleVerifySecurityOtp = async (otpCode: string) => {
+    if (pendingSecurityAction === "PROFILE") {
+      await new Promise((resolve, reject) => {
+        updateMe.mutate(
+          { email, phone, otpCode },
+          {
+            onSuccess: () => {
+              setIsSecurityOtpOpen(false);
+              alert("Email updated successfully. Please log in again.");
+              logout();
+              router.push("/auth/login");
+              resolve(true);
+            },
+            onError: (err: any) => {
+              reject(err);
+            },
+          }
+        );
+      });
+    } else if (pendingSecurityAction === "PASSWORD") {
+      await new Promise((resolve, reject) => {
+        updateMe.mutate(
+          { currentPassword, newPassword, otpCode },
+          {
+            onSuccess: () => {
+              setIsSecurityOtpOpen(false);
+              setPasswordMsg("Password updated successfully!");
+              setCurrentPassword("");
+              setNewPassword("");
+              setConfirmPassword("");
+              setTimeout(() => setPasswordMsg(""), 3000);
+              resolve(true);
+            },
+            onError: (err: any) => {
+              reject(err);
+            },
+          }
+        );
+      });
+    }
   };
 
   const openAddressForm = (addr?: Address) => {
@@ -1330,6 +1378,22 @@ export default function Profile() {
         }}
         initialTicket={selectedTicketForChat}
         onTicketCreated={fetchMyTickets}
+      />
+
+      {/* Security Update 6-Digit OTP Verification Modal */}
+      <OtpModal
+        isOpen={isSecurityOtpOpen}
+        onClose={() => {
+          setIsSecurityOtpOpen(false);
+          setPendingSecurityAction(null);
+        }}
+        email={user.email}
+        onVerify={handleVerifySecurityOtp}
+        onResend={async () => {
+          await api.post("/users/me/request-otp");
+        }}
+        title="Security Action Verification"
+        subtitle={`Enter the 6-digit code sent to ${user.email} to authorize changes.`}
       />
     </>
   );

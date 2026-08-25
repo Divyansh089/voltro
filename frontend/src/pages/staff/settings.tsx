@@ -8,6 +8,8 @@ import { useCustomerProfile } from "@/modules/users/hooks/useCustomerProfile";
 import { useMyAddresses, useSaveAddress } from "@/modules/users/hooks/useMyAddresses";
 import { Mail, Phone, Lock, Save, Shield, UserCircle, KeyRound, MapPin, Camera, Loader2 } from "lucide-react";
 import { useRouter } from "next/router";
+import { OtpModal } from "@/components/shared/OtpModal";
+import api from "@/lib/api";
 
 export default function StaffSettingsPage() {
   const { user, logout } = useAuth();
@@ -38,6 +40,10 @@ export default function StaffSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
   const [passwordMsg, setPasswordMsg] = useState("");
+
+  // OTP Security Modal State
+  const [isSecurityOtpOpen, setIsSecurityOtpOpen] = useState(false);
+  const [pendingSecurityAction, setPendingSecurityAction] = useState<"PROFILE" | "PASSWORD" | null>(null);
 
   // Synchronize email and phone state when user or profileData finishes loading
   useEffect(() => {
@@ -77,11 +83,21 @@ export default function StaffSettingsPage() {
     e.preventDefault();
     setProfileMsg("");
 
-    try {
-      // 1. Update User Email & Phone
-      await updateMe.mutateAsync({ email, phone });
+    // If email is changing, trigger OTP verification
+    if (email !== user.email) {
+      try {
+        await api.post("/users/me/request-otp");
+        setPendingSecurityAction("PROFILE");
+        setIsSecurityOtpOpen(true);
+      } catch (err: any) {
+        setProfileMsg(err?.response?.data?.message || "Failed to send verification OTP.");
+      }
+      return;
+    }
 
-      // 2. Update/Save Address if addressLine1 is filled out
+    // Otherwise save address & phone directly
+    try {
+      await updateMe.mutateAsync({ phone });
       if (addressLine1) {
         await saveAddress.mutateAsync({
           id: primaryAddress?.id,
@@ -97,21 +113,14 @@ export default function StaffSettingsPage() {
           isDefault: true,
         });
       }
-
-      if (email !== user.email) {
-        alert("Email changed successfully. Please log in again.");
-        logout();
-        router.push("/auth/login");
-      } else {
-        setProfileMsg("Contact & Address information updated successfully!");
-        setTimeout(() => setProfileMsg(""), 3000);
-      }
+      setProfileMsg("Contact & Address information updated successfully!");
+      setTimeout(() => setProfileMsg(""), 3000);
     } catch (err: any) {
       setProfileMsg(err?.response?.data?.message || "Failed to update profile");
     }
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMsg("");
     if (newPassword !== confirmPassword) {
@@ -122,21 +131,47 @@ export default function StaffSettingsPage() {
       setPasswordMsg("All password fields are required");
       return;
     }
-    updateMe.mutate(
-      { currentPassword, newPassword },
-      {
-        onSuccess: () => {
-          setPasswordMsg("Password updated successfully!");
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-          setTimeout(() => setPasswordMsg(""), 3000);
-        },
-        onError: (err: any) => {
-          setPasswordMsg(err?.response?.data?.message || "Failed to update password");
-        },
+
+    try {
+      await api.post("/users/me/request-otp");
+      setPendingSecurityAction("PASSWORD");
+      setIsSecurityOtpOpen(true);
+    } catch (err: any) {
+      setPasswordMsg(err?.response?.data?.message || "Failed to send verification OTP.");
+    }
+  };
+
+  const handleVerifySecurityOtp = async (otpCode: string) => {
+    if (pendingSecurityAction === "PROFILE") {
+      await updateMe.mutateAsync({ email, phone, otpCode });
+      if (addressLine1) {
+        await saveAddress.mutateAsync({
+          id: primaryAddress?.id,
+          label: "Office",
+          fullName: displayName,
+          phone: phone || "0000000000",
+          addressLine1,
+          addressLine2: addressLine2 || undefined,
+          city,
+          state,
+          postalCode,
+          country,
+          isDefault: true,
+        });
       }
-    );
+      setIsSecurityOtpOpen(false);
+      alert("Email updated successfully. Please log in again.");
+      logout();
+      router.push("/auth/login");
+    } else if (pendingSecurityAction === "PASSWORD") {
+      await updateMe.mutateAsync({ currentPassword, newPassword, otpCode });
+      setIsSecurityOtpOpen(false);
+      setPasswordMsg("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordMsg(""), 3000);
+    }
   };
 
   return (
@@ -446,6 +481,22 @@ export default function StaffSettingsPage() {
 
         </div>
       </StaffShell>
+
+      {/* Security Update 6-Digit OTP Verification Modal */}
+      <OtpModal
+        isOpen={isSecurityOtpOpen}
+        onClose={() => {
+          setIsSecurityOtpOpen(false);
+          setPendingSecurityAction(null);
+        }}
+        email={user.email}
+        onVerify={handleVerifySecurityOtp}
+        onResend={async () => {
+          await api.post("/users/me/request-otp");
+        }}
+        title="Staff Security Action Verification"
+        subtitle={`Enter the 6-digit code sent to ${user.email} to authorize account changes.`}
+      />
     </>
   );
 }

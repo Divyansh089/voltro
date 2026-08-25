@@ -73,8 +73,16 @@ export default function LoginPage() {
       </Head>
       <div className="mx-auto w-full max-w-md px-4 pt-10 pb-16">
         <div className="glass p-8 md:p-10">
+          <div className="mb-6">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-9 w-auto object-contain shrink-0" />
+              <span className="font-display text-2xl font-bold tracking-tight text-ink">
+                Voltra<span className="text-neon">.</span>
+              </span>
+            </Link>
+          </div>
           <div>
-            <h2 className="font-display text-3xl font-bold text-ink">Welcome back</h2>
+            <h2 className="font-display text-2xl font-bold text-ink">Welcome back</h2>
             <p className="mt-1 text-sm text-ink-soft">Sign in to continue to Voltra.</p>
           </div>
 
@@ -106,9 +114,9 @@ export default function LoginPage() {
                 />{" "}
                 Remember me
               </label>
-              <a href="#" className="font-medium text-ink hover:underline">
+              <Link href="/auth/forgot-password" className="font-medium text-ink hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             {loginMutation.isError && (
