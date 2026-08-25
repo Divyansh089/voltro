@@ -41,12 +41,11 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(10),
 
-  // Email
-  SMTP_HOST: z.string().default('smtp.sendgrid.net'),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_USER: z.string().default(''),
-  SMTP_PASS: z.string().default(''),
-  EMAIL_FROM: z.string().email().default('noreply@voltra.com'),
+  // Brevo Email Configuration
+  BREVO_API_KEY: z.string().default(''),
+  SMTP_FROM_NAME: z.string().default('Voltra Electronics'),
+  SMTP_FROM_EMAIL: z.string().default('noreply@voltra.com'),
+  OTP_EXPIRY_TIME: z.coerce.number().int().positive().default(120000),
 
   // Payment Gateway
   PAYMENT_GATEWAY: z.enum(['stripe', 'razorpay']).default('stripe'),
