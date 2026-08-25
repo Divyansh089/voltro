@@ -77,12 +77,12 @@ export function StaffShell({ children }: { children?: React.ReactNode }) {
       <div className="mx-auto flex max-w-[1500px] gap-5 px-4 pt-4 pb-10">
         {/* Desktop Sidebar (lg:flex) */}
         <aside className="glass sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col p-5 lg:flex">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
-              <Zap size={16} strokeWidth={2} />
-            </span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-8 w-auto object-contain shrink-0" />
             <div>
-              <div className="font-display text-lg font-bold text-ink">Voltra</div>
+              <div className="font-display text-lg font-bold text-ink">
+                Voltra<span className="text-neon">.</span>
+              </div>
               <div className="text-[10px] uppercase tracking-widest text-ink-muted">
                 Staff Portal
               </div>
@@ -127,12 +127,12 @@ export function StaffShell({ children }: { children?: React.ReactNode }) {
             <aside className="relative z-10 w-72 max-w-[80vw] bg-white h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between border-b border-ink/10 pb-4">
-                  <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2">
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
-                      <Zap size={16} strokeWidth={2} />
-                    </span>
+                  <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2.5">
+                    <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-8 w-auto object-contain shrink-0" />
                     <div>
-                      <div className="font-display text-lg font-bold text-ink">Voltra</div>
+                      <div className="font-display text-lg font-bold text-ink">
+                        Voltra<span className="text-neon">.</span>
+                      </div>
                       <div className="text-[10px] uppercase tracking-widest text-ink-muted">
                         Staff Portal
                       </div>
