@@ -7,9 +7,10 @@ import { CacheKeys } from '../../cache/cacheKeys';
 import { TTL } from '../../cache/ttl';
 import { RoleName } from '../../common/enums';
 import { AuditAction } from '../../common/enums';
-import { BadRequestError, UnauthorizedError, ConflictError } from '../../common/errors';
+import { BadRequestError, UnauthorizedError, ConflictError, NotFoundError } from '../../common/errors';
 import { hashPassword, comparePassword } from '../../common/helpers';
 import { createModuleLogger } from '../../config/logger';
+import { OtpService } from './otp.service';
 import { z } from 'zod';
 import type { registerSchema, loginSchema, resetPasswordSchema } from './auth.validator';
 
@@ -403,5 +404,126 @@ export class AuthService {
 
     // Remove from Redis
     await CacheService.del(CacheKeys.session(sessionId));
+  }
+
+  /**
+   * Forgot Password — Step 1: Request 6-digit OTP
+   */
+  static async requestForgotPasswordOtp(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user) {
+      throw new NotFoundError('No registered account found with this email address.');
+    }
+
+    return await OtpService.sendOtp(email, 'FORGOT_PASSWORD');
+  }
+
+  /**
+   * Forgot Password — Step 2: Verify 6-digit OTP & Return Reset Token
+   */
+  static async verifyForgotPasswordOtp(email: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user) {
+      throw new NotFoundError('No registered account found with this email address.');
+    }
+
+    await OtpService.verifyOtp(email, 'FORGOT_PASSWORD', code);
+
+    // Create 15-minute temporary reset token
+    const resetToken = jwt.sign(
+      { userId: user.id, email: user.email, purpose: 'RESET_PASSWORD' },
+      env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return {
+      verified: true,
+      resetToken,
+      message: 'OTP verified successfully. You may now reset your password.',
+    };
+  }
+
+  /**
+   * Forgot Password — Step 3: Update Password using Verified Reset Token
+   */
+  static async resetForgotPassword(resetToken: string, newPassword: string, ipAddress?: string, userAgent?: string) {
+    let decoded: any;
+    try {
+      decoded = jwt.verify(resetToken, env.JWT_ACCESS_SECRET);
+    } catch {
+      throw new UnauthorizedError('Password reset token has expired or is invalid. Please restart the process.');
+    }
+
+    if (decoded?.purpose !== 'RESET_PASSWORD' || !decoded?.userId) {
+      throw new UnauthorizedError('Invalid password reset token format.');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { role: true, customerProfile: true, staffProfile: true },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User account not found.');
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password & invalidate all active sessions for security
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: hashedPassword },
+    });
+
+    await prisma.session.updateMany({
+      where: { userId: user.id },
+      data: { isActive: false },
+    });
+
+    log.info({ userId: user.id }, 'Password reset successfully via OTP verification flow');
+
+    // Create new login session automatically
+    const sessionId = uuidv4();
+    const { accessToken, refreshToken } = this.generateTokens(user.id, sessionId, user.role.name);
+    const hashedRefreshToken = await hashPassword(refreshToken);
+
+    await prisma.session.create({
+      data: {
+        id: sessionId,
+        userId: user.id,
+        refreshToken: hashedRefreshToken,
+        ipAddress,
+        userAgent,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await CacheService.set(
+      CacheKeys.session(sessionId),
+      { userId: user.id, role: user.role.name },
+      TTL.SESSION
+    );
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role.name,
+        avatarUrl: user.avatarUrl,
+        customerProfile: user.customerProfile ? {
+          firstName: user.customerProfile.firstName,
+          lastName: user.customerProfile.lastName,
+        } : undefined,
+      },
+      accessToken,
+      refreshToken,
+      message: 'Password updated successfully.',
+    };
   }
 }
