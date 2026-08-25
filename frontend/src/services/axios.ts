@@ -23,7 +23,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       StorageService.clearAuth();
       if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
+        const path = window.location.pathname;
+        if (path.startsWith("/staff") || path.startsWith("/customer")) {
+          window.location.href = "/auth/login";
+        }
       }
     }
     return Promise.reject(error);
