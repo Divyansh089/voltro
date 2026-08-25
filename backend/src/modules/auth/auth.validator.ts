@@ -30,7 +30,16 @@ export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
+export const requestOtpSchema = z.object({
+  email: emailSchema,
+});
+
+export const verifyOtpSchema = z.object({
+  email: emailSchema,
+  code: z.string().length(6, 'Verification code must be 6 digits'),
+});
+
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token is required'),
+  resetToken: z.string().min(1, 'Reset token is required'),
   newPassword: passwordSchema,
 });

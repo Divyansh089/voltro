@@ -119,4 +119,38 @@ export class AuthController {
       }, 'Current user profile')
     );
   }
+
+  /**
+   * Request 6-digit OTP for Forgot Password
+   */
+  static async requestForgotPasswordOtp(req: Request, res: Response) {
+    const { email } = req.body;
+    const result = await AuthService.requestForgotPasswordOtp(email);
+    res.status(HttpStatus.OK).json(sendSuccess(result, result.message));
+  }
+
+  /**
+   * Verify 6-digit OTP for Forgot Password
+   */
+  static async verifyForgotPasswordOtp(req: Request, res: Response) {
+    const { email, code } = req.body;
+    const result = await AuthService.verifyForgotPasswordOtp(email, code);
+    res.status(HttpStatus.OK).json(sendSuccess(result, result.message));
+  }
+
+  /**
+   * Reset Password after OTP Verification
+   */
+  static async resetForgotPassword(req: Request, res: Response) {
+    const { resetToken, newPassword } = req.body;
+    const { user, accessToken, refreshToken, message } = await AuthService.resetForgotPassword(
+      resetToken,
+      newPassword,
+      req.ip as string,
+      req.get('user-agent') as string
+    );
+
+    res.cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions());
+    res.status(HttpStatus.OK).json(sendSuccess({ user, accessToken }, message));
+  }
 }
