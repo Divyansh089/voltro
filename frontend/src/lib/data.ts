@@ -33,19 +33,12 @@ export const IMAGES = {
 };
 
 export const CATEGORY_PREVIEWS: Record<string, string> = {
-  laptops: laptopSilver,
-  laptop: laptopSilver,
-  smartphones: phoneMint,
-  phones: phoneMint,
-  phone: phoneMint,
-  audio: headphonesNavy,
-  displays: tablet,
-  tablet: tablet,
-  tablets: tablet,
-  accessories: cable,
-  accessory: cable,
-  drones: drone,
-  drone: drone,
+  laptops: "/category/laptop01.png",
+  phones: "/category/phone1.png",
+  tablets: "/category/tab01.png",
+  drones: "/category/drone01.png",
+  audio: "/category/audio01.png",
+  accessories: "/category/acc01.png",
 };
 
 export type ProductData = {

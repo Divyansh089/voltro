@@ -89,7 +89,9 @@ api.interceptors.response.use(
           localStorage.removeItem(STORAGE_KEYS.TOKEN);
           localStorage.removeItem(STORAGE_KEYS.USER);
           localStorage.removeItem(STORAGE_KEYS.PERMISSIONS);
-          if (!window.location.pathname.startsWith("/auth")) {
+          const path = window.location.pathname;
+          // Only redirect to login if user is attempting to access protected customer or staff routes
+          if (path.startsWith("/staff") || path.startsWith("/customer")) {
             window.location.href = "/auth/login";
           }
         }
