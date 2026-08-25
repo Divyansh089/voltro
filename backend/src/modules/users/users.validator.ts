@@ -30,6 +30,7 @@ export const updateMeSchema = z.object({
   phone: z.string().or(z.literal('')).optional().nullable(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(1, 'New password must not be empty').optional(),
+  otpCode: z.string().optional(),
 });
 
 export const userListQuerySchema = paginationSchema.merge(sortSchema).merge(searchSchema).extend({

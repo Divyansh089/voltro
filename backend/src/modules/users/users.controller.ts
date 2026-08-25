@@ -46,14 +46,15 @@ export class UsersController {
     res.status(HttpStatus.OK).json(sendSuccess(updatedUser, 'User updated successfully'));
   }
 
+  static async requestSecurityOtp(req: Request, res: Response) {
+    const userId = (req as any).user.userId;
+    const result = await UsersService.requestSecurityOtp(userId);
+    res.status(HttpStatus.OK).json(sendSuccess(result, result.message));
+  }
+
   static async updateMe(req: Request, res: Response) {
     const userId = (req as any).user.userId;
-    const updatedUser = await UsersService.updateMe(
-      userId,
-      req.body,
-      req.ip as string,
-      req.get('user-agent') as string
-    );
+    const updatedUser = await UsersService.updateSelf(userId, req.body);
     
     res.status(HttpStatus.OK).json(sendSuccess(updatedUser, 'Profile updated successfully'));
   }

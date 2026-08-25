@@ -7,6 +7,8 @@ import { CacheKeys } from '../../cache/cacheKeys';
 import { UploadService, CloudinaryService } from '../../storage';
 import { CLOUDINARY_FOLDERS } from '../../config/cloudinary';
 import { createModuleLogger } from '../../config/logger';
+import { EmailService } from '../../services/email.service';
+import { OtpService } from '../auth/otp.service';
 import type { Prisma } from '@prisma/client';
 
 const log = createModuleLogger('users-service');
@@ -215,26 +217,49 @@ export class UsersService {
   }
 
   /**
-   * Update own profile (Self operation)
+   * Request 6-digit OTP for account security updates
    */
-  static async updateMe(
+  static async requestSecurityOtp(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User', userId);
+    }
+    return await OtpService.sendOtp(user.email, 'UPDATE_SECURITY');
+  }
+
+  /**
+   * Update current user's profile and security (with OTP check for email/password)
+   */
+  static async updateSelf(
     id: string,
     data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string | null;
       email?: string;
-      phone?: string;
       currentPassword?: string;
       newPassword?: string;
-    },
-    ipAddress?: string,
-    userAgent?: string
+      otpCode?: string;
+    }
   ) {
     const user = await prisma.user.findUnique({
       where: { id },
-      include: { staffProfile: true, customerProfile: true },
+      include: { customerProfile: true, staffProfile: true },
     });
 
     if (!user) {
       throw new NotFoundError('User', id);
+    }
+
+    const isEmailChanging = data.email && data.email.toLowerCase().trim() !== user.email.toLowerCase();
+    const isPasswordChanging = !!data.newPassword;
+
+    // Require 6-digit OTP verification for security updates (email or password change)
+    if (isEmailChanging || isPasswordChanging) {
+      if (!data.otpCode) {
+        throw new BadRequestError('6-digit verification code is required for email or password updates.');
+      }
+      await OtpService.verifyOtp(user.email, 'UPDATE_SECURITY', data.otpCode);
     }
 
     const { email, phone, currentPassword, newPassword } = data;
@@ -467,6 +492,18 @@ export class UsersService {
 
       return created;
     });
+
+    // Send Official Staff Offer Letter & Credentials via Brevo Email
+    try {
+      await EmailService.sendStaffOfferLetter(data.email, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+        tempPassword: generatedPassword,
+      });
+    } catch (emailErr) {
+      log.error({ emailErr, email: data.email }, 'Failed to send Staff Offer Letter Email');
+    }
 
     return {
       user: newUser,

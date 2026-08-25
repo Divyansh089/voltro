@@ -21,6 +21,12 @@ router.post(
   asyncHandler(UsersController.uploadAvatar)
 );
 
+// Request 6-digit security OTP (Any authenticated user)
+router.post(
+  '/me/request-otp',
+  asyncHandler(UsersController.requestSecurityOtp)
+);
+
 // Update self (Any authenticated user)
 router.patch(
   '/me',
