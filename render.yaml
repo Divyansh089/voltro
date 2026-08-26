@@ -1,0 +1,62 @@
+services:
+  # ── Voltra Backend API Web Service ─────────────────────
+  - type: web
+    name: voltra-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: singapore
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: API_VERSION
+        value: v1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: voltra-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: voltra-redis
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRY
+        value: 3h
+      - key: JWT_REFRESH_EXPIRY
+        value: 7d
+      - key: CORS_ORIGINS
+        value: https://voltra-frontend.onrender.com,http://localhost:3001
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: Voltra Electronics
+      - key: SMTP_FROM_EMAIL
+        value: noreply@voltra.com
+
+databases:
+  # ── PostgreSQL Managed Database ────────────────────────
+  - name: voltra-postgres
+    databaseName: voltra
+    user: voltra
+    region: singapore
+    plan: free
+
+# ── Redis Managed Cache ──────────────────────────────────
+kv:
+  - name: voltra-redis
+    region: singapore
+    plan: free
