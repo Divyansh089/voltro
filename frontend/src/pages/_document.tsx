@@ -5,6 +5,9 @@ export default function Document() {
     <Html lang="en">
       <Head>
         <meta charSet="utf-8" />
+        <link rel="icon" href="/logo/voltra_logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo/voltra_logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo/voltra_logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
