@@ -39,58 +39,13 @@ export function Footer() {
 
   return (
     <footer className="mx-auto mt-10 w-full max-w-[1400px] px-4 pb-10 print:hidden space-y-4">
-      {/* ── Value Proposition Badges Bar (Apple / Amazon Style) ── */}
-      <div className="glass grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
-        <div className="flex items-center gap-3.5 p-2">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neon/20 text-neon-dark">
-            <Truck size={20} />
-          </div>
-          <div>
-            <h4 className="font-display text-sm font-bold text-ink">Free Express Shipping</h4>
-            <p className="text-xs text-ink-soft">On all orders over $100 worldwide</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3.5 p-2">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neon/20 text-neon-dark">
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <h4 className="font-display text-sm font-bold text-ink">2-Year Voltra Warranty</h4>
-            <p className="text-xs text-ink-soft">Comprehensive hardware protection</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3.5 p-2">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neon/20 text-neon-dark">
-            <RotateCcw size={20} />
-          </div>
-          <div>
-            <h4 className="font-display text-sm font-bold text-ink">30-Day Easy Returns</h4>
-            <p className="text-xs text-ink-soft">Hassle-free 100% money-back guarantee</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3.5 p-2">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neon/20 text-neon-dark">
-            <Lock size={20} />
-          </div>
-          <div>
-            <h4 className="font-display text-sm font-bold text-ink">Encrypted Checkout</h4>
-            <p className="text-xs text-ink-soft">256-bit AES SSL Bank-grade security</p>
-          </div>
-        </div>
-      </div>
-
       {/* ── Main Multi-Column Footer Body ── */}
       <div className="glass p-8 md:p-12 space-y-10">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand & Newsletter Column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
-                <Zap size={18} strokeWidth={2} />
-              </span>
+            <Link href="/" className="flex items-center gap-2.5">
+              <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-9 w-auto object-contain shrink-0" />
               <span className="font-display text-2xl font-bold tracking-tight text-ink">
                 Voltra<span className="text-neon">.</span>
               </span>
