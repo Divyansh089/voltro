@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { ArrowUpRight, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowUpRight, Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useRegister } from "@/modules/auth/hooks/useRegister";
 
@@ -103,21 +103,20 @@ export default function RegisterPage() {
       </Head>
       <div className="mx-auto w-full max-w-md px-4 pt-10 pb-16">
         <div className="glass p-8 md:p-10">
-          <div>
-            <h2 className="font-display text-3xl font-bold text-ink">Join Voltra</h2>
-            <p className="mt-1 text-sm text-ink-soft">Create a customer account to unlock the ecosystem.</p>
+          <div className="mb-6">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-9 w-auto object-contain shrink-0" />
+              <span className="font-display text-2xl font-bold tracking-tight text-ink">
+                Voltra<span className="text-neon">.</span>
+              </span>
+            </Link>
           </div>
-
-          <ul className="mt-6 grid grid-cols-1 gap-2">
-            {["Secure checkout", "Order dashboard", "Priority support"].map((t) => (
-              <li key={t} className="flex items-center gap-2 text-xs text-ink-soft">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-neon text-ink">
-                  <Check size={11} strokeWidth={3} />
-                </span>
-                {t}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <h2 className="font-display text-2xl font-bold text-ink">Join Voltra</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              Create your account to experience next-gen gadgets
+            </p>
+          </div>
 
           <form onSubmit={onSubmit} className="mt-7 space-y-4">
             <div className="grid grid-cols-2 gap-3">
