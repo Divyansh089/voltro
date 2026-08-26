@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Head from "next/head";
 import {
@@ -149,11 +149,10 @@ function Hero() {
                   className={`cursor-pointer transition-all duration-700 ease-in-out transform hover:scale-105 ${slotConfig.h} ${slotConfig.w} ${slotConfig.tilt}`}
                 >
                   <div
-                    className={`absolute inset-0 rounded-md border transition-all duration-700 ${
-                      slotConfig.isApex
-                        ? "border-white/80 bg-gradient-to-b from-white/85 via-white/60 to-slate-100/40 shadow-2xl"
-                        : "border-white/60 bg-gradient-to-b from-white/55 to-white/15 shadow-lg backdrop-blur-sm"
-                    }`}
+                    className={`absolute inset-0 rounded-md border transition-all duration-700 ${slotConfig.isApex
+                      ? "border-white/80 bg-gradient-to-b from-white/85 via-white/60 to-slate-100/40 shadow-2xl"
+                      : "border-white/60 bg-gradient-to-b from-white/55 to-white/15 shadow-lg backdrop-blur-sm"
+                      }`}
                   />
                   <div className="absolute inset-x-1 top-2 h-2 rounded-sm bg-white/40" />
 
@@ -161,9 +160,8 @@ function Hero() {
                   <img
                     src={prod.img}
                     alt={prod.name}
-                    className={`absolute left-1/2 ${slotConfig.imgH} w-auto -translate-x-1/2 object-contain drop-shadow-2xl transition-all duration-700 ${
-                      slotConfig.isApex ? "scale-110 drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)]" : ""
-                    }`}
+                    className={`absolute left-1/2 ${slotConfig.imgH} w-auto -translate-x-1/2 object-contain drop-shadow-2xl transition-all duration-700 ${slotConfig.isApex ? "scale-110 drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)]" : ""
+                      }`}
                     style={{ bottom: "calc(100% - 20px)" }}
                   />
 
@@ -193,263 +191,381 @@ function Hero() {
   );
 }
 
-/* ---------- Voltra Categories ---------- */
-const CAT_ICONS_MAP: Record<string, { Icon: any; tint: string }> = {
-  phone: { Icon: Smartphone, tint: "from-[#A7F3D0] to-[#60A5FA]" },
-  laptop: { Icon: Laptop, tint: "from-[#FDE68A] to-[#86EFAC]" },
-  tablet: { Icon: Tablet, tint: "from-[#FBCFE8] to-[#C7D2FE]" },
-  audio: { Icon: Headphones, tint: "from-[#E9D5FF] to-[#BFDBFE]" },
-  accessories: { Icon: Cable, tint: "from-[#FBCFE8] to-[#FDE68A]" },
-  drones: { Icon: Plane, tint: "from-[#BAE6FD] to-[#A7F3D0]" },
+/* ---------- Voltra Categories (Visual Card Showcase) ---------- */
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+  laptops: "/category/laptop01.png",
+  phones: "/category/phone9.png",
+  tablets: "/category/tab01.png",
+  drones: "/category/drone01.png",
+  audio: "/category/audio01.png",
+  accessories: "/category/acc01.png",
 };
+
+const ORDERED_SLUGS = ["accessories", "audio", "drones", "tablets", "phones", "laptops"];
+
+const DEFAULT_CATEGORIES = [
+  { id: "accessories", name: "Accessories", slug: "accessories", itemCount: 0, imgSrc: "/category/acc01.png" },
+  { id: "audio", name: "Audio", slug: "audio", itemCount: 0, imgSrc: "/category/audio01.png" },
+  { id: "drones", name: "Drones", slug: "drones", itemCount: 0, imgSrc: "/category/drone01.png" },
+  { id: "tablets", name: "Tablets", slug: "tablets", itemCount: 0, imgSrc: "/category/tab01.png" },
+  { id: "phones", name: "Phones", slug: "phones", itemCount: 0, imgSrc: "/category/phone9.png" },
+  { id: "laptops", name: "Laptops", slug: "laptops", itemCount: 0, imgSrc: "/category/laptop01.png" },
+];
 
 function VoltraCategories() {
   const { data: dbCategories = [] } = useCategories();
-  const categories = dbCategories.length > 0 ? dbCategories : [];
+
+  const categoriesToDisplay = useMemo(() => {
+    if (!dbCategories || dbCategories.length === 0) return DEFAULT_CATEGORIES;
+
+    const sorted = [...dbCategories].sort((a: any, b: any) => {
+      const aIndex = ORDERED_SLUGS.indexOf(a.slug.toLowerCase());
+      const bIndex = ORDERED_SLUGS.indexOf(b.slug.toLowerCase());
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+      return 0;
+    });
+
+    return sorted.map((c: any) => {
+      const slugLower = c.slug.toLowerCase();
+      const itemCount = c._count?.products ?? 0;
+      const imgSrc = CATEGORY_IMAGE_MAP[slugLower] || "/category/acc01.png";
+      return {
+        id: c.id || c.slug,
+        name: c.name,
+        slug: c.slug,
+        itemCount,
+        imgSrc,
+      };
+    });
+  }, [dbCategories]);
 
   return (
-    <section className="glass mt-6 p-5 rounded-3xl">
+    <section className="glass mt-8 p-6 md:p-8 rounded-3xl space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-bold text-ink">Explore Voltra Categories</h2>
-        <Link href="/categories/all" className="chip inline-flex items-center gap-1 text-xs">
-          View All <ArrowUpRight size={13} />
+        <h2 className="font-display text-xl md:text-2xl font-extrabold text-ink">Explore Voltra Categories</h2>
+        <Link href="/categories/all" className="chip inline-flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full bg-white/70 hover:bg-white border border-ink/10 transition shadow-sm">
+          View All <ArrowUpRight size={14} />
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {categories.map((c: any) => {
-          const config = CAT_ICONS_MAP[c.slug] || { Icon: Headphones, tint: "from-[#BFDBFE] to-[#A7F3D0]" };
-          const Icon = config.Icon;
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+        {categoriesToDisplay.map((c) => (
+          <Link
+            key={c.id}
+            href={`/categories/${c.slug}`}
+            className="group relative flex h-56 sm:h-64 flex-col justify-end overflow-hidden rounded-2xl md:rounded-[24px] p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl border border-white/80"
+          >
+            {/* Full Card Background Image */}
+            <img
+              src={c.imgSrc}
+              alt={c.name}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
 
-          return (
-            <Link
-              key={c.id || c.slug}
-              href={`/categories/${c.slug}`}
-              className="glass-soft group flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-md"
-            >
-              <div
-                className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${config.tint} shadow-sm`}
-              >
-                <Icon size={20} className="text-ink" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-xs font-bold text-ink block truncate">{c.name}</span>
-                <span className="text-[10px] text-ink-muted font-medium">
-                  {c._count?.products ?? 0} {c._count?.products === 1 ? "item" : "items"}
-                </span>
-              </div>
-              <ArrowRight
-                size={13}
-                className="text-ink-soft shrink-0 transition group-hover:translate-x-1 group-hover:text-ink"
-              />
-            </Link>
-          );
-        })}
+            {/* Subtle Gradient Overlay for Text Readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent pointer-events-none" />
+
+            {/* Text Floating Directly Over the Image */}
+            <div className="relative z-10">
+              <span className="block font-display text-base font-extrabold text-ink drop-shadow-sm">{c.name}</span>
+              <span className="block text-xs font-medium text-ink-soft mt-0.5 drop-shadow-sm">
+                {c.itemCount} {c.itemCount === 1 ? "item" : "items"}
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   );
 }
 
-/* ---------- Trending Hardware — Modern Cyber-Minimal Bento Showcase ---------- */
+/* ---------- Trending Now — Exact Bento Showcase Grid ---------- */
 function TrendingNow() {
-  const laptop = PRODUCTS.find((p) => p.id === "vbook") || PRODUCTS[1];
-  const phone = PRODUCTS.find((p) => p.id === "vphone") || PRODUCTS[0];
-  const audio = PRODUCTS.find((p) => p.id === "sequoia") || PRODUCTS[2];
-  const earbuds = PRODUCTS.find((p) => p.id === "xbudb") || PRODUCTS[3];
-  const drone = PRODUCTS.find((p) => p.id === "skye") || PRODUCTS[5];
-  const charger = PRODUCTS.find((p) => p.id === "vcable") || PRODUCTS[6];
-
   return (
     <section className="glass mt-8 p-6 md:p-8 rounded-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-extrabold text-ink">
-            Trending Hardware
+            Trending Now
           </h2>
         </div>
 
-        <Link href="/categories/all" className="btn-neon px-5 py-2.5 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+        <Link
+          href="/categories/all"
+          className="btn-neon px-5 py-2.5 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+        >
           Explore All Products <ArrowUpRight size={15} />
         </Link>
       </div>
 
-      {/* Modern Bento Showcase Grid */}
+      {/* Grid Container */}
       <div className="grid grid-cols-12 gap-4">
-        {/* Flagship Laptop Wide Showcase (7 Cols) */}
+        {/* ROW 1 & 2: LEFT BLOCK (Col 1-6) */}
+
+        {/* Card 1: Voltra Book Pro M3 (Top Left Wide) */}
         <Link
-          href={`/product/${laptop.id}`}
-          className="glass-soft group relative col-span-12 lg:col-span-7 flex flex-col justify-between overflow-hidden p-6 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl border border-white/60"
+          href="/categories/laptops"
+          className="group relative col-span-12 lg:col-span-6 flex h-60 sm:h-64 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
-          <div className="flex items-center justify-between z-10">
-            <span className="rounded-full bg-slate-900 text-white px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider">
-              {laptop.tag || "Flagship M3"}
+          <img
+            src="/trending/voltra-book3.png"
+            alt="Voltra Book Pro M3"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              TRENDING
             </span>
-            <span className="font-display text-2xl font-extrabold text-ink">
-              ${laptop.price}
-            </span>
+            <span className="font-display text-xl font-extrabold text-ink">${1899}</span>
           </div>
-
-          <div className="my-6 grid h-52 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200/50 p-4">
-            <img
-              src={laptop.image}
-              alt={laptop.name}
-              className="h-44 w-auto object-contain drop-shadow-2xl transition-all duration-500 group-hover:scale-105"
-            />
-          </div>
-
-          <div className="flex items-center justify-between z-10 pt-1 border-t border-ink/5">
+          <div className="relative z-10 flex items-end justify-between gap-4">
             <div>
-              <h3 className="font-display text-xl font-bold text-ink group-hover:text-neon-dark transition">
-                {laptop.name}
+              <h3 className="font-display text-xl md:text-2xl font-extrabold text-ink">
+                Voltra Book Pro M3
               </h3>
-              <p className="text-xs text-ink-soft">Next-Gen M3 Max Processing & Retina XDR Display</p>
+              <p className="text-xs font-medium text-ink-soft mt-0.5 max-w-xs">
+                Next-Gen M3 Max Processing &amp; Retina XDR Display
+              </p>
+              <div className="font-display text-xl font-extrabold text-ink mt-2">${1899}</div>
             </div>
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink shadow-md">
-              <ArrowUpRight size={18} />
-            </span>
-          </div>
-        </Link>
-
-        {/* Tall Smartphone Card (5 Cols) */}
-        <Link
-          href={`/product/${phone.id}`}
-          className="glass-soft group relative col-span-12 lg:col-span-5 flex flex-col justify-between overflow-hidden p-6 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl border border-white/60"
-        >
-          <div className="flex items-center justify-between z-10">
-            <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider">
-              {phone.tag || "Mint Edition"}
-            </span>
-            <span className="font-display text-xl font-bold text-ink">
-              ${phone.price}
-            </span>
-          </div>
-
-          <div className="my-4 grid h-52 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-sky-50 p-4">
-            <img
-              src={phone.image}
-              alt={phone.name}
-              className="h-44 w-auto object-contain drop-shadow-2xl transition-all duration-500 group-hover:scale-105"
-            />
-          </div>
-
-          <div className="flex items-center justify-between z-10 pt-1 border-t border-ink/5">
-            <div>
-              <h3 className="font-display text-lg font-bold text-ink group-hover:text-neon-dark transition">
-                {phone.name}
-              </h3>
-              <p className="text-xs text-ink-soft">120Hz ProMotion & Titanium Frame</p>
-            </div>
-            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink shadow-md">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
 
-        {/* Satellite Row Cards */}
+        {/* Card 2: Laser-Etched Processor (Tall Center Feature - Spans 2 Rows) */}
         <Link
-          href={`/product/${audio.id}`}
-          className="glass-soft group relative col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col justify-between overflow-hidden p-5 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-white/60"
+          href="/categories/all"
+          className="group relative col-span-12 md:col-span-6 lg:col-span-3 lg:row-span-2 flex h-80 lg:h-full min-h-[460px] flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#C5C8CC] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-muted bg-white/80 px-2.5 py-0.5 rounded-full">
-              {audio.category}
-            </span>
-            <span className="font-display text-base font-bold text-ink">${audio.price}</span>
+          <img
+            src="/trending/voltra-sky.png"
+            alt="Laser-Etched Processor"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-ink">${1899}</span>
           </div>
-
-          <div className="my-3 grid h-36 place-items-center rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 p-3">
-            <img
-              src={audio.image}
-              alt={audio.name}
-              className="h-28 w-auto object-contain drop-shadow-xl transition group-hover:scale-105"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <span className="font-display text-sm font-bold text-ink truncate pr-2">{audio.name}</span>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink">
-              <ArrowUpRight size={14} />
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <h3 className="font-display text-xl md:text-2xl font-extrabold uppercase leading-tight text-ink">
+              LASER-ETCHED
+              <br />
+              PROCESSOR
+            </h3>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
 
+        {/* Card 3: Voltra Sound Pro Headphones & Buds (Top Right) */}
         <Link
-          href={`/product/${earbuds.id}`}
-          className="glass-soft group relative col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col justify-between overflow-hidden p-5 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-white/60"
+          href="/categories/audio"
+          className="group relative col-span-12 md:col-span-6 lg:col-span-3 flex h-60 sm:h-64 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-muted bg-white/80 px-2.5 py-0.5 rounded-full">
-              {earbuds.category}
+          <img
+            src="/trending/voltra-headset.png"
+            alt="Voltra Sound Pro Headphones & Buds"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              AUDIO COLLECTION
             </span>
-            <span className="font-display text-base font-bold text-ink">${earbuds.price}</span>
+            <span className="font-display text-xl font-extrabold text-ink">${179}</span>
           </div>
-
-          <div className="my-3 grid h-36 place-items-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-3">
-            <img
-              src={earbuds.image}
-              alt={earbuds.name}
-              className="h-28 w-auto object-contain drop-shadow-xl transition group-hover:scale-105"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <span className="font-display text-sm font-bold text-ink truncate pr-2">{earbuds.name}</span>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink">
-              <ArrowUpRight size={14} />
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <h3 className="font-display text-lg md:text-xl font-extrabold text-ink leading-tight max-w-[180px]">
+              Voltra Sound Pro Headphones &amp; Buds
+            </h3>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
 
+        {/* Card 4: Voltra X-Buds Pro (Middle Left A) */}
         <Link
-          href={`/product/${drone.id}`}
-          className="glass-soft group relative col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col justify-between overflow-hidden p-5 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-white/60"
+          href="/categories/audio"
+          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#333] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-muted bg-white/80 px-2.5 py-0.5 rounded-full">
-              {drone.category}
+          <img
+            src="/trending/X-buds.png"
+            alt="Voltra X-Buds Pro"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              BEST SELLER
             </span>
-            <span className="font-display text-base font-bold text-ink">${drone.price}</span>
+            <span className="font-display text-xl font-extrabold text-white">${199}</span>
           </div>
-
-          <div className="my-3 grid h-36 place-items-center rounded-2xl bg-gradient-to-br from-sky-50 to-cyan-50 p-3">
-            <img
-              src={drone.image}
-              alt={drone.name}
-              className="h-28 w-auto object-contain drop-shadow-xl transition group-hover:scale-105"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <span className="font-display text-sm font-bold text-ink truncate pr-2">{drone.name}</span>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink">
-              <ArrowUpRight size={14} />
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
+                VOLTRA X-BUDS PRO
+              </h3>
+              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[200px]">
+                Voltra X-Buds Pro - Active Noise Cancellation &amp; Spatial Audio.
+              </p>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
 
+        {/* Card 5: Voltra Gaming Chip (Middle Left B) */}
         <Link
-          href={`/product/${charger.id}`}
-          className="glass-soft group relative col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col justify-between overflow-hidden p-5 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-white/60"
+          href="/categories/all"
+          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#222] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-muted bg-white/80 px-2.5 py-0.5 rounded-full">
-              {charger.category}
+          <img
+            src="/trending/voltra-sky.png"
+            alt="Voltra Gaming Chip"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 mix-blend-luminosity"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              GAMING TECH
             </span>
-            <span className="font-display text-base font-bold text-ink">${charger.price}</span>
+            <span className="font-display text-xl font-extrabold text-white">${199}</span>
           </div>
-
-          <div className="my-3 grid h-36 place-items-center rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-3">
-            <img
-              src={charger.image}
-              alt={charger.name}
-              className="h-28 w-auto object-contain drop-shadow-xl transition group-hover:scale-105"
-            />
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
+                VOLTRA GAMING CHIP
+              </h3>
+              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[190px]">
+                Voltra Gaming Processing - Powering Immersive Graphics.
+              </p>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
+            </span>
           </div>
+        </Link>
 
-          <div className="flex items-center justify-between pt-1">
-            <span className="font-display text-sm font-bold text-ink truncate pr-2">{charger.name}</span>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink text-white transition group-hover:bg-neon group-hover:text-ink">
-              <ArrowUpRight size={14} />
+        {/* Card 6: Voltra Pro Gaming Headset (Middle Right) */}
+        <Link
+          href="/categories/audio"
+          className="group relative col-span-12 md:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#333] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/trending/voltra-headset.png"
+            alt="Voltra Pro Gaming Headset"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              AUDIO COLLECTION
+            </span>
+            <span className="font-display text-xl font-extrabold text-white">${149}</span>
+          </div>
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
+                VOLTRA PRO GAMING HEADSET
+              </h3>
+              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[190px]">
+                Surround Sound &amp; Detachable Mic - Dominate the Lobby.
+              </p>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
+            </span>
+          </div>
+        </Link>
+
+        {/* ROW 3: 3 CARDS (LEFT TABLET, CENTER CABLE, RIGHT PHONE WITH RIGHT-ALIGNED TEXT & NO LOGO) */}
+
+        {/* Card 7: Voltra Creator Tablet (Bottom Left - Wide 5 Cols) */}
+        <Link
+          href="/categories/tablets"
+          className="group relative col-span-12 lg:col-span-5 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/trending/voltra-tablet.png"
+            alt="Voltra Creator Tablet"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              TRENDING
+            </span>
+            <span className="font-display text-xl font-extrabold text-ink">${999}</span>
+          </div>
+          <div className="relative z-10 flex items-end justify-between gap-4">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-ink leading-tight">
+                VOLTRA CREATOR TABLET
+              </h3>
+              <p className="text-[11px] font-medium text-ink-soft mt-0.5 max-w-xs">
+                Voltra Creator Tablet - High Precision &amp; Color Accuracy.
+              </p>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
+            </span>
+          </div>
+        </Link>
+
+        {/* Card 8: Voltra Creative Cable (Bottom Center - Small 2 Cols) */}
+        <Link
+          href="/categories/accessories"
+          className="group relative col-span-12 sm:col-span-4 lg:col-span-2 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/category/acc01.png"
+            alt="Creative Cable"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
+
+          <div /> {/* Top spacer */}
+
+          <div className="relative z-10 flex items-center justify-between">
+            <span className="font-display text-base font-extrabold text-white drop-shadow-md">
+              ${249}
+            </span>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-900/90 text-white shadow-md transition-transform duration-300 group-hover:scale-110 border border-white/20">
+              <ArrowUpRight size={15} />
+            </span>
+          </div>
+        </Link>
+
+        {/* Card 9: Voltra Phone 15 (Bottom Right - Wide 5 Cols, Right Aligned Text, No Logo) */}
+        <Link
+          href="/categories/phones"
+          className="group relative col-span-12 lg:col-span-5 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#3A322C] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/trending/Voltra-phone3.png"
+            alt="Voltra Phone 15"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
+              BEST SELLER
+            </span>
+            <span className="font-display text-xl font-extrabold text-white">${999}</span>
+          </div>
+          <div className="relative z-10 flex items-end justify-end gap-3 text-right">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-white leading-tight">
+                Voltra Phone 15
+              </h3>
+              <p className="text-[11px] font-medium text-slate-200 mt-0.5">
+                120Hz ProMotion &amp; Titanium Frame
+              </p>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-900/90 text-white shadow-md transition-transform duration-300 group-hover:scale-110 border border-white/20">
+              <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
@@ -610,54 +726,6 @@ function NewReleases() {
   );
 }
 
-/* ---------- Voltra Ecosystem Banner ---------- */
-function EcosystemBanner() {
-  return (
-    <section className="glass mt-8 relative overflow-hidden p-8 md:p-12 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-ink text-white">
-      <div className="pointer-events-none absolute -right-20 top-0 h-96 w-96 rounded-full bg-neon/15 blur-3xl" />
-
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <div className="lg:col-span-7 space-y-4">
-          <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-            One Unified Hardware &amp; Software Ecosystem.
-          </h2>
-          <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-            All Voltra devices connect seamlessly with zero latency. Hand off tasks between your Voltra Phone and Voltra Laptop, auto-sync spatial audio, and process payments instantly with the Voltra Platinum Card.
-          </p>
-
-          <div className="pt-2 flex flex-wrap gap-4">
-            <Link
-              href="/categories/all"
-              className="btn-neon px-6 py-3 text-xs font-extrabold inline-flex items-center gap-2"
-            >
-              Explore Voltra OS <ArrowRight size={15} />
-            </Link>
-          </div>
-        </div>
-
-        <div className="lg:col-span-5 grid grid-cols-2 gap-3 text-ink">
-          <div className="glass p-4 rounded-2xl bg-white/90 space-y-1">
-            <div className="text-xs font-bold text-ink">Instant Handoff</div>
-            <div className="text-[11px] text-ink-soft">Share clipboard &amp; tasks in 1 tap</div>
-          </div>
-          <div className="glass p-4 rounded-2xl bg-white/90 space-y-1">
-            <div className="text-xs font-bold text-ink">Spatial Audio Sync</div>
-            <div className="text-[11px] text-ink-soft">Low-latency acoustic streaming</div>
-          </div>
-          <div className="glass p-4 rounded-2xl bg-white/90 space-y-1">
-            <div className="text-xs font-bold text-ink">Encrypted Voltra Key</div>
-            <div className="text-[11px] text-ink-soft">Biometric hardware security</div>
-          </div>
-          <div className="glass p-4 rounded-2xl bg-white/90 space-y-1">
-            <div className="text-xs font-bold text-ink">Global Care Warranty</div>
-            <div className="text-[11px] text-ink-soft">24/7 express replacement</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function Index() {
   return (
     <>
@@ -668,7 +736,7 @@ export default function Index() {
           content="Explore Voltra's curated ecosystem of phones, laptops and audio gear. Design your futuristic lifestyle today."
         />
       </Head>
-      <div className="mx-auto w-full max-w-[1400px] px-4 pt-6">
+      <div className="mx-auto w-full max-w-[1400px] px-4 pt-6" suppressHydrationWarning>
         <div className="grid grid-cols-12 gap-4">
           <Hero />
         </div>
@@ -676,7 +744,6 @@ export default function Index() {
         <TrendingNow />
         <TechSpecsMatrix />
         <NewReleases />
-        <EcosystemBanner />
       </div>
     </>
   );
