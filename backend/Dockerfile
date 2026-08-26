@@ -46,10 +46,15 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY package.json package-lock.json* ./
 RUN npm ci --production && npm cache clean --force
 
-# Copy built application
+# Copy built application & schema
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/src/prisma/schema.prisma ./src/prisma/schema.prisma
+
+# Re-generate Prisma Client in production stage for runtime compatibility
+RUN npx prisma generate
+
+# Set permissions for non-root user
+RUN chown -R voltra:nodejs /app
 
 # Switch to non-root user
 USER voltra
