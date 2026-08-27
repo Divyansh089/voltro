@@ -3,8 +3,8 @@ services:
   - type: web
     name: voltra-backend
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     region: singapore
     plan: free
     healthCheckPath: /api/v1/health
@@ -33,7 +33,7 @@ services:
       - key: JWT_REFRESH_EXPIRY
         value: 7d
       - key: CORS_ORIGINS
-        value: https://voltra-frontend.onrender.com,http://localhost:3001
+        value: https://voltra.vercel.app,https://voltra-frontend.vercel.app,http://localhost:3000,http://localhost:3001
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
