@@ -33,11 +33,17 @@ export const productListQuerySchema = paginationSchema.merge(sortSchema).merge(s
 export const addImageSchema = z.object({
   altText: z.string().optional(),
   sortOrder: z.coerce.number().int().min(0).default(0),
-  isPrimary: z.enum(['true', 'false']).optional().transform(val => val === 'true'),
+  isPrimary: z.union([
+    z.boolean(),
+    z.string().transform((val) => val === 'true')
+  ]).optional().default(false),
 });
 
 export const updateImageSchema = z.object({
   altText: z.string().optional(),
   sortOrder: z.number().int().min(0).optional(),
-  isPrimary: z.boolean().optional(),
+  isPrimary: z.union([
+    z.boolean(),
+    z.string().transform((val) => val === 'true')
+  ]).optional(),
 });
