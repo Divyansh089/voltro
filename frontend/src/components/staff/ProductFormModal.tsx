@@ -55,6 +55,11 @@ export function ProductFormModal({ isOpen, onClose }: ProductFormModalProps) {
     }
   };
 
+  const handleRemoveAltFile = (index: number) => {
+    setAltFiles((prev) => prev.filter((_, i) => i !== index));
+    setAltPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -131,7 +136,7 @@ export function ProductFormModal({ isOpen, onClose }: ProductFormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl md:p-8">
         
         {/* Header */}
@@ -294,7 +299,7 @@ export function ProductFormModal({ isOpen, onClose }: ProductFormModalProps) {
               >
                 <Upload size={24} className="text-ink-muted mb-2" />
                 <span className="text-xs font-semibold text-ink">Click to upload Primary Image</span>
-                <span className="text-[10px] text-ink-muted mt-0.5">JPEG, PNG, WebP (Max 5MB)</span>
+                <span className="text-[10px] text-ink-muted mt-0.5">JPEG, PNG, WebP, AVIF, SVG (Max 10MB)</span>
               </button>
             )}
           </div>
@@ -314,8 +319,16 @@ export function ProductFormModal({ isOpen, onClose }: ProductFormModalProps) {
             />
             <div className="flex flex-wrap items-center gap-3">
               {altPreviews.map((src, idx) => (
-                <div key={idx} className="relative overflow-hidden rounded-xl border border-ink/10">
+                <div key={idx} className="relative inline-block overflow-hidden rounded-xl border border-ink/10 group shadow-sm">
                   <img src={src} alt={`Alt ${idx}`} className="h-20 w-20 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAltFile(idx)}
+                    className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink/80 text-white shadow-md hover:bg-rose-600 transition"
+                    title="Remove Image"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
               ))}
               <button

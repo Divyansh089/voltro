@@ -16,7 +16,7 @@ export function StaffCredentialsModal({ isOpen, onClose, credentials }: StaffCre
   if (!isOpen || !credentials) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-ink/50 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-md rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl md:p-8 space-y-6">
         
         {/* Close Button */}

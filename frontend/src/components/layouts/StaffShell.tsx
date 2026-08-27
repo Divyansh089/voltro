@@ -58,8 +58,11 @@ export function StaffShell({ children }: { children?: React.ReactNode }) {
   // Filter sidebar items based on user permissions and roles
   const visibleItems = ALL_SIDEBAR_ITEMS.filter((item) => {
     if (item.permission !== null && !permissions.includes(item.permission)) return false;
-    // Product Managers only care about supply/inventory, hide analytics and users
-    if (user?.role === "PRODUCT_MANAGER" && (item.label === "Analytics" || item.label === "Users")) {
+    // Product Managers only manage catalog/inventory. Hide Orders, Refunds, Analytics, Users.
+    if (
+      user?.role === "PRODUCT_MANAGER" &&
+      (item.label === "Orders" || item.label === "Refunds" || item.label === "Analytics" || item.label === "Users")
+    ) {
       return false;
     }
     return true;
@@ -183,7 +186,7 @@ export function StaffShell({ children }: { children?: React.ReactNode }) {
 
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {/* Topbar */}
-          <header className="glass relative z-50 flex items-center justify-between lg:justify-end gap-3 px-5 py-3">
+          <header className="glass relative z-30 flex items-center justify-between lg:justify-end gap-3 px-5 py-3">
             {/* Mobile Hamburger Toggle (< 1024px) */}
             <div className="flex items-center gap-3 lg:hidden">
               <button

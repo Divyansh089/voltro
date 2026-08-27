@@ -147,7 +147,7 @@ export function SupportQueryModal({
   const replies = activeTicket?.replies || [];
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-ink/75 backdrop-blur-md animate-fadeIn overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-ink/75 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ink/10 p-5 bg-white/60">
@@ -180,7 +180,7 @@ export function SupportQueryModal({
         {/* Content Body */}
         {isNewQueryView ? (
           /* ── CREATE NEW QUERY FORM ── */
-          <form onSubmit={handleCreateTicket} className="p-6 space-y-4 overflow-y-auto flex-1">
+          <form onSubmit={handleCreateTicket} className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
             {errorMsg && (
               <div className="rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-600">
                 {errorMsg}
@@ -296,7 +296,7 @@ export function SupportQueryModal({
             </div>
 
             {/* Chat Stream */}
-            <div className="flex-1 p-6 space-y-4 overflow-y-auto bg-slate-50/50">
+            <div className="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar bg-slate-50/50">
               {isLoadingDetails ? (
                 <div className="py-12 text-center text-ink-soft font-semibold text-xs">
                   <Loader2 size={20} className="mx-auto animate-spin text-neon-dark mb-2" />

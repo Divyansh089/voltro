@@ -51,17 +51,19 @@ export function CancelOrderModal({ isOpen, onClose, order, onSuccess }: CancelOr
   const totalAmount = Number(order.total || order.totalAmount || 0).toFixed(2);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/75 backdrop-blur-md animate-fadeIn overflow-y-auto">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/20 bg-white/95 p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/75 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-3xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl flex flex-col">
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close modal"
-          className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink hover:bg-ink/10 transition"
+          className="absolute right-5 top-5 z-20 grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink hover:bg-ink/10 transition"
         >
           <X size={18} />
         </button>
+
+        <div className="overflow-y-auto custom-scrollbar p-6 md:p-8 pr-5 flex-1">
 
         {/* Header */}
         <div className="flex items-start gap-4 border-b border-ink/10 pb-5 pr-8">
@@ -163,6 +165,7 @@ export function CancelOrderModal({ isOpen, onClose, order, onSuccess }: CancelOr
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

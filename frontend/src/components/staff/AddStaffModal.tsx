@@ -68,7 +68,7 @@ export function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-ink/10 bg-white p-6 shadow-2xl md:p-8">
         
         {/* Header */}

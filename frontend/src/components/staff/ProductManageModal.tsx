@@ -40,7 +40,7 @@ export function ProductManageModal({ isOpen, onClose, product }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-md">
         <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-2xl flex flex-col">
           
           {/* Header */}

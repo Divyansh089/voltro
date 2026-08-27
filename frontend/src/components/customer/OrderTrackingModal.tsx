@@ -123,17 +123,20 @@ export function OrderTrackingModal({ isOpen, onClose, order, onOrderUpdated }: O
       />
 
       {/* ── SCREEN POP-UP MODAL (HIDDEN ON PRINT) ── */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/75 backdrop-blur-md animate-fadeIn overflow-y-auto print:hidden">
-        <div className="relative w-full max-w-3xl my-8 overflow-hidden rounded-3xl border border-white/20 bg-white/95 p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-ink/75 backdrop-blur-md animate-fadeIn print:hidden">
+        <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl flex flex-col">
           {/* Top Right Close Button */}
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink hover:bg-ink/10 transition"
+            className="absolute right-5 top-5 z-20 grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink hover:bg-ink/10 transition"
           >
             <X size={18} />
           </button>
+
+          {/* Inner Scroll Container */}
+          <div className="overflow-y-auto custom-scrollbar p-6 md:p-8 pr-5 flex-1">
 
           {/* Modal Header */}
           <div className="border-b border-ink/10 pb-5 pr-10">
@@ -373,16 +376,15 @@ export function OrderTrackingModal({ isOpen, onClose, order, onOrderUpdated }: O
           </div>
         </div>
       </div>
+      </div>
 
       {/* ── PRINT-ONLY DEDICATED OFFICIAL VOLTRA CORPORATE TAX INVOICE ── */}
       <div className="hidden print:block fixed inset-0 z-[99999] bg-white text-slate-900 p-8 font-sans leading-relaxed text-xs">
         {/* Invoice Header */}
         <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-black text-lime-400 font-black grid place-items-center text-lg">
-                ⚡
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo/voltra_logo.png" alt="Voltra Logo" className="h-9 w-auto object-contain shrink-0" />
               <span className="font-extrabold text-2xl tracking-tight text-slate-900">
                 VOLTRA <span className="text-lime-600">.</span>
               </span>

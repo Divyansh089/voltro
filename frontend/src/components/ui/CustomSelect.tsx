@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 
 export interface CustomSelectOption {
@@ -16,8 +17,11 @@ interface CustomSelectProps {
   disabled?: boolean;
   className?: string;
   buttonClassName?: string;
+  labelClassName?: string;
   label?: string;
   size?: "sm" | "md" | "lg";
+  direction?: "auto" | "up" | "down";
+  usePortal?: boolean;
 }
 
 export function CustomSelect({
@@ -28,12 +32,21 @@ export function CustomSelect({
   disabled = false,
   className = "",
   buttonClassName = "",
+  labelClassName = "",
   label,
   size = "md",
+  direction = "auto",
+  usePortal = true,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [openUpward, setOpenUpward] = useState(direction === "up");
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Normalize options into standard CustomSelectOption objects
   const normalizedOptions: CustomSelectOption[] = options.map((opt) => {
@@ -44,6 +57,44 @@ export function CustomSelect({
   });
 
   const selectedOption = normalizedOptions.find((opt) => opt.value === value);
+
+  // Update fixed position on open or scroll
+  const updatePosition = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const isUp = direction === "up" || (direction === "auto" && window.innerHeight - rect.bottom < 240 && rect.top > 200);
+    setOpenUpward(isUp);
+
+    const style: React.CSSProperties = {
+      position: "fixed",
+      width: Math.max(rect.width, 140),
+      left: rect.left,
+      zIndex: 9999,
+    };
+
+    if (isUp) {
+      style.bottom = window.innerHeight - rect.top + 6;
+      style.maxHeight = Math.min(280, rect.top - 12);
+    } else {
+      style.top = rect.bottom + 6;
+      style.maxHeight = Math.min(280, window.innerHeight - rect.bottom - 12);
+    }
+
+    setMenuStyle(style);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      const handleScrollOrResize = () => updatePosition();
+      window.addEventListener("scroll", handleScrollOrResize, true);
+      window.addEventListener("resize", handleScrollOrResize);
+      return () => {
+        window.removeEventListener("scroll", handleScrollOrResize, true);
+        window.removeEventListener("resize", handleScrollOrResize);
+      };
+    }
+  }, [isOpen, direction]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -58,16 +109,8 @@ export function CustomSelect({
 
   const handleToggle = () => {
     if (disabled) return;
-    if (!isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      // If less than 240px space below and more space above, open upward
-      if (spaceBelow < 240 && spaceAbove > spaceBelow) {
-        setOpenUpward(true);
-      } else {
-        setOpenUpward(false);
-      }
+    if (!isOpen) {
+      updatePosition();
     }
     setIsOpen(!isOpen);
   };
@@ -78,10 +121,55 @@ export function CustomSelect({
     lg: "h-12 px-4 text-sm",
   }[size];
 
+  const menuContent = isOpen && (
+    <div
+      style={usePortal ? menuStyle : undefined}
+      className={`${
+        usePortal
+          ? "fixed z-[9999]"
+          : `absolute left-0 right-0 z-50 ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"}`
+      } max-h-72 overflow-y-auto rounded-xl bg-white p-1.5 shadow-2xl border border-ink/10 animate-fadeIn scrollbar-thin`}
+    >
+      {normalizedOptions.length === 0 ? (
+        <div className="p-3 text-center text-xs text-ink-muted">No options available</div>
+      ) : (
+        normalizedOptions.map((opt) => {
+          const isSelected = opt.value === value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg text-left text-xs transition ${
+                isSelected
+                  ? "bg-neon/15 font-bold text-ink"
+                  : "text-ink-soft hover:bg-slate-100/90 hover:text-ink font-medium"
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                {opt.icon}
+                <div>
+                  <div className="truncate">{opt.label}</div>
+                  {opt.description && (
+                    <div className="text-[10px] text-ink-muted font-normal truncate">{opt.description}</div>
+                  )}
+                </div>
+              </div>
+              {isSelected && <Check size={14} className="text-ink shrink-0" />}
+            </button>
+          );
+        })
+      )}
+    </div>
+  );
+
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
       {label && (
-        <span className="block text-xs font-medium text-ink-soft mb-1.5">{label}</span>
+        <span className={labelClassName || "block text-xs font-medium text-ink-soft mb-1.5"}>{label}</span>
       )}
 
       {/* Select Button */}
@@ -102,47 +190,7 @@ export function CustomSelect({
       </button>
 
       {/* Options Popup Menu */}
-      {isOpen && (
-        <div
-          className={`absolute left-0 right-0 z-50 max-h-72 overflow-y-auto rounded-xl bg-white p-1.5 shadow-2xl border border-ink/10 animate-fadeIn scrollbar-thin ${
-            openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          }`}
-        >
-          {normalizedOptions.length === 0 ? (
-            <div className="p-3 text-center text-xs text-ink-muted">No options available</div>
-          ) : (
-            normalizedOptions.map((opt) => {
-              const isSelected = opt.value === value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg text-left text-xs transition ${
-                    isSelected
-                      ? "bg-neon/15 font-bold text-ink"
-                      : "text-ink-soft hover:bg-slate-100/90 hover:text-ink font-medium"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    {opt.icon}
-                    <div>
-                      <div className="truncate">{opt.label}</div>
-                      {opt.description && (
-                        <div className="text-[10px] text-ink-muted font-normal truncate">{opt.description}</div>
-                      )}
-                    </div>
-                  </div>
-                  {isSelected && <Check size={14} className="text-ink shrink-0" />}
-                </button>
-              );
-            })
-          )}
-        </div>
-      )}
+      {usePortal && isMounted ? createPortal(menuContent, document.body) : menuContent}
     </div>
   );
 }
