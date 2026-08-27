@@ -9,6 +9,7 @@ import { useCart } from "@/store/cart.store";
 import { useProducts } from "@/modules/products/hooks/useProducts";
 import { useCategories } from "@/modules/products/hooks/useManageProducts";
 import { CATEGORY_PREVIEWS } from "@/lib/data";
+import { formatDescriptionPreview } from "@/lib/utils";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const category = context.params?.category as string;
@@ -122,11 +123,10 @@ export default function CategoryListing({ category: serverCategory }: { category
               <div className="space-y-1.5">
                 <Link
                   href="/categories/all"
-                  className={`block rounded-xl px-3 py-2 text-xs font-medium transition ${
-                    isAll
+                  className={`block rounded-xl px-3 py-2 text-xs font-medium transition ${isAll
                       ? "bg-neon/20 font-bold text-ink shadow-sm"
                       : "text-ink-soft hover:bg-white/60 hover:text-ink"
-                  }`}
+                    }`}
                 >
                   All Products
                 </Link>
@@ -137,11 +137,10 @@ export default function CategoryListing({ category: serverCategory }: { category
                     <Link
                       key={c.id || c.slug}
                       href={`/categories/${c.slug}`}
-                      className={`block rounded-xl px-3 py-2 text-xs font-medium transition ${
-                        isSelected
+                      className={`block rounded-xl px-3 py-2 text-xs font-medium transition ${isSelected
                           ? "bg-neon/20 font-bold text-ink shadow-sm"
                           : "text-ink-soft hover:bg-white/60 hover:text-ink"
-                      }`}
+                        }`}
                     >
                       {c.name}
                     </Link>
@@ -190,9 +189,8 @@ export default function CategoryListing({ category: serverCategory }: { category
                           setSort(s);
                           setSortOpen(false);
                         }}
-                        className={`block w-full rounded-xl px-3 py-2 text-left text-xs font-medium transition hover:bg-white/70 ${
-                          sort === s ? "bg-white text-ink font-bold" : "text-ink-soft"
-                        }`}
+                        className={`block w-full rounded-xl px-3 py-2 text-left text-xs font-medium transition hover:bg-white/70 ${sort === s ? "bg-white text-ink font-bold" : "text-ink-soft"
+                          }`}
                       >
                         {s}
                       </button>
@@ -241,22 +239,21 @@ export default function CategoryListing({ category: serverCategory }: { category
                       <button
                         type="button"
                         onClick={() => wish.toggle(p.id)}
-                        className={`absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-sm ${
-                          wish.has(p.id) ? "text-rose-500" : "text-ink hover:text-rose-500"
-                        }`}
+                        className={`absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-sm ${wish.has(p.id) ? "text-rose-500" : "text-ink hover:text-rose-500"
+                          }`}
                       >
                         <Heart size={14} fill={wish.has(p.id) ? "currentColor" : "none"} />
                       </button>
 
                       <Link
                         href={`/product/${p.id}`}
-                        className="grid h-48 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-ink/5 to-ink/[0.02]"
+                        className="relative block h-48 w-full overflow-hidden rounded-2xl bg-white/50"
                       >
                         <img
                           src={primaryImage}
                           alt={p.name}
                           loading="lazy"
-                          className="h-36 w-36 object-contain drop-shadow-xl transition group-hover:scale-105"
+                          className="h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
                         />
                       </Link>
 
@@ -276,7 +273,7 @@ export default function CategoryListing({ category: serverCategory }: { category
                         >
                           {p.name}
                         </Link>
-                        <p className="text-xs text-ink-soft line-clamp-2 mt-0.5">{p.description}</p>
+                        <p className="text-xs text-ink-soft line-clamp-2 mt-0.5">{formatDescriptionPreview(p.description)}</p>
                       </div>
 
                       <div className="mt-4 flex items-center justify-between border-t border-ink/5 pt-3">

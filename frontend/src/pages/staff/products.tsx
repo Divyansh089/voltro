@@ -100,9 +100,9 @@ export default function StaffProductsPage() {
                         <tr key={product.id} className="transition-colors hover:bg-white/60">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-ink/10 bg-slate-100 grid place-items-center">
+                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-100 grid place-items-center">
                                 {imgUrl ? (
-                                  <img src={imgUrl} alt={product.name} className="h-full w-full object-contain p-1" />
+                                  <img src={imgUrl} alt={product.name} className="h-full w-full object-cover scale-110" />
                                 ) : (
                                   <Settings2 size={16} className="text-ink-muted" />
                                 )}

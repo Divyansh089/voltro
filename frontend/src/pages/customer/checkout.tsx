@@ -21,6 +21,7 @@ import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { useCart } from "@/store/cart.store";
 import { useAuth } from "@/providers/AuthProvider";
 import { useMyAddresses, useSaveAddress, type Address } from "@/modules/users/hooks/useMyAddresses";
+import { useCustomerProfile } from "@/modules/users/hooks/useCustomerProfile";
 import { ROUTES } from "@/lib/routes";
 import { UnlockCardModal } from "@/components/customer/UnlockCardModal";
 import { CustomSelect } from "@/components/ui/CustomSelect";
@@ -69,6 +70,7 @@ function Field({
 export default function Checkout() {
   const { items: cartItems, subtotal: cartSubtotal, clear } = useCart();
   const { user } = useAuth();
+  const { data: profileData } = useCustomerProfile();
   const { data: addresses = [] } = useMyAddresses();
   const router = useRouter();
 
@@ -91,6 +93,13 @@ export default function Checkout() {
 
   const activeCheckoutItems = useMemo(() => {
     if (isBuyNowActive) return [buyNowItem];
+    try {
+      const selectedRaw = typeof window !== "undefined" ? sessionStorage.getItem("voltra_selected_checkout_items") : null;
+      if (selectedRaw) {
+        const parsed = JSON.parse(selectedRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
     return cartItems;
   }, [isBuyNowActive, buyNowItem, cartItems]);
 
@@ -98,8 +107,8 @@ export default function Checkout() {
     if (isBuyNowActive) {
       return Number(buyNowItem.price || 0) * (buyNowItem.qty || 1);
     }
-    return cartSubtotal;
-  }, [isBuyNowActive, buyNowItem, cartSubtotal]);
+    return activeCheckoutItems.reduce((acc: number, item: any) => acc + (Number(item.price || 0) * Number(item.qty || 1)), 0);
+  }, [isBuyNowActive, buyNowItem, activeCheckoutItems]);
 
   // Form State
   const [email, setEmail] = useState("");
@@ -158,16 +167,26 @@ export default function Checkout() {
   const [couponError, setCouponError] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
-  // Pre-fill user profile info
+  // Pre-fill user profile info & phone number
+  useEffect(() => {
+    if (profileData) {
+      const pPhone = profileData.customerProfile?.phone || profileData.staffProfile?.phone;
+      if (pPhone) setPhone(pPhone);
+    }
+  }, [profileData]);
+
   useEffect(() => {
     if (user) {
       if (user.email) setEmail(user.email);
-      const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      const u = user as any;
+      const uPhone = u.customerProfile?.phone || u.staffProfile?.phone || u.phone;
+      if (uPhone && !phone) setPhone(uPhone);
+
+      const name = `${user.firstName || u.customerProfile?.firstName || ""} ${user.lastName || u.customerProfile?.lastName || ""}`.trim();
       if (name) {
         setFullName(name);
         setCardName(name);
       }
-      if ((user as any).phone) setPhone((user as any).phone);
     }
   }, [user]);
 
@@ -175,6 +194,7 @@ export default function Checkout() {
   useEffect(() => {
     if (addresses.length > 0) {
       const def = addresses.find((a: Address) => a.isDefault) || addresses[0];
+      if (def.phone && !phone) setPhone(def.phone);
       setSelectedAddressId(def.id);
       populateAddressFields(def);
     }

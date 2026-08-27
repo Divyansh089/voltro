@@ -7,6 +7,7 @@ import { useCart } from "@/store/cart.store";
 import { useProducts } from "@/modules/products/hooks/useProducts";
 import { ROUTES } from "@/lib/routes";
 import { CATEGORY_PREVIEWS } from "@/lib/data";
+import { formatDescriptionPreview } from "@/lib/utils";
 
 export const getServerSideProps: GetServerSideProps = async () => {
   return {
@@ -69,11 +70,11 @@ export default function WishlistPage() {
                   className="glass group relative flex flex-col justify-between p-5 rounded-3xl transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <div>
-                    <div className="relative grid h-44 place-items-center overflow-hidden rounded-2xl bg-white/50 p-4">
+                    <div className="relative h-48 w-full overflow-hidden rounded-2xl bg-white/50">
                       <img
                         src={primaryImage}
                         alt={p.name}
-                        className="h-36 w-36 object-contain drop-shadow-xl transition group-hover:scale-105"
+                        className="h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
                       />
                     </div>
 
@@ -84,7 +85,7 @@ export default function WishlistPage() {
                       <h3 className="font-display text-base font-bold text-ink line-clamp-1">
                         {p.name}
                       </h3>
-                      <p className="text-xs text-ink-soft line-clamp-2">{p.description}</p>
+                      <p className="text-xs text-ink-soft line-clamp-2">{formatDescriptionPreview(p.description)}</p>
                     </div>
                   </div>
 

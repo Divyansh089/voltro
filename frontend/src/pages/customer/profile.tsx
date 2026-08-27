@@ -147,6 +147,10 @@ export default function Profile() {
   const [addrIsDefault, setAddrIsDefault] = useState(false);
   const [addressMsg, setAddressMsg] = useState("");
 
+  // OTP Security Modal State
+  const [isSecurityOtpOpen, setIsSecurityOtpOpen] = useState(false);
+  const [pendingSecurityAction, setPendingSecurityAction] = useState<"PROFILE" | "PASSWORD" | null>(null);
+
   // Sync settings state when live profile loads
   useEffect(() => {
     if (profileData) {
@@ -179,10 +183,6 @@ export default function Profile() {
         year: "numeric",
       })
     : "May 2026";
-
-  // OTP Security Modal State
-  const [isSecurityOtpOpen, setIsSecurityOtpOpen] = useState(false);
-  const [pendingSecurityAction, setPendingSecurityAction] = useState<"PROFILE" | "PASSWORD" | null>(null);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -598,26 +598,36 @@ export default function Profile() {
                       <p className="text-xs text-ink-muted">Loading orders...</p>
                     ) : orders.length > 0 ? (
                       <div className="space-y-3">
-                        {orders.slice(0, 2).map((order) => (
-                          <div key={order.id} className="glass-soft flex flex-wrap items-center justify-between gap-4 p-4">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm font-bold text-ink">{order.orderNumber}</span>
-                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase">
-                                  {order.orderStatus}
-                                </span>
+                        {orders.slice(0, 2).map((order: any) => {
+                          const amount = Number(order.total ?? order.totalAmount ?? order.subtotal ?? 0);
+                          const itemsQty = order.orderItems?.reduce((acc: number, item: any) => acc + Number(item.quantity || 1), 0) || order.orderItems?.length || 1;
+                          const statusStr = (order.orderStatus || order.status || "PENDING").toUpperCase();
+
+                          return (
+                            <div
+                              key={order.id}
+                              onClick={() => setSelectedOrderForTracking(order)}
+                              className="glass-soft flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl cursor-pointer hover:bg-white/80 transition"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-sm font-bold text-ink">#{order.orderNumber || order.id?.slice(0, 8)}</span>
+                                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase">
+                                    {statusStr}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-xs text-ink-soft">
+                                  {new Date(order.createdAt || Date.now()).toLocaleDateString()} • {itemsQty} item(s)
+                                </p>
                               </div>
-                              <p className="mt-1 text-xs text-ink-soft">
-                                {new Date(order.createdAt).toLocaleDateString()} • {order.orderItems?.length || 1} item(s)
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-display text-base font-bold text-ink">
-                                ${Number(order.totalAmount).toFixed(2)}
+                              <div className="text-right">
+                                <div className="font-display text-base font-bold text-ink">
+                                  ${amount.toFixed(2)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="py-6 text-center">
@@ -823,7 +833,7 @@ export default function Profile() {
                     <div className="space-y-4">
                       {orders.map((order: any) => {
                         const statusStr = (order.orderStatus || order.status || "PENDING").toUpperCase();
-                        const totalCost = Number(order.total || order.totalAmount || 0);
+                        const totalCost = Number(order.total ?? order.totalAmount ?? order.subtotal ?? 0);
                         const itemsCount = order.orderItems?.length || order._count?.orderItems || 1;
 
                         return (

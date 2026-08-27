@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { StaffShell } from "@/components/layouts/StaffShell";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   RotateCcw,
   CheckCircle2,
@@ -18,12 +19,28 @@ import {
 import api from "@/lib/api";
 
 export default function StaffRefundsPage() {
+  const { user } = useAuth();
+  const userRole = String((user as any)?.role || "");
+
   const [refunds, setRefunds] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  if (userRole === "PRODUCT_MANAGER") {
+    return (
+      <StaffShell>
+        <div className="glass p-12 text-center max-w-lg mx-auto mt-12 rounded-2xl">
+          <h2 className="font-display text-xl font-bold text-ink">Access Restricted</h2>
+          <p className="mt-2 text-sm text-ink-soft">
+            Refunds are managed exclusively by Customer Support specialists. Product Managers handle catalog items and inventory.
+          </p>
+        </div>
+      </StaffShell>
+    );
+  }
 
   // Moderation Modal State
   const [actionModal, setActionModal] = useState<{

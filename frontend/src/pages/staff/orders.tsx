@@ -15,16 +15,37 @@ export default function StaffOrdersPage() {
   const [search, setSearch] = useState("");
   const { data, isLoading } = useAdminOrders({ page, limit: 20, search });
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrderStatus();
-  const canUpdate =
-    usePermission("order:update") ||
-    user?.role === "CUSTOMER_SUPPORT" ||
-    user?.role === "ADMIN" ||
-    user?.role === "PRODUCT_MANAGER";
+  const [statusMsg, setStatusMsg] = useState("");
+  const userRole = String((user as any)?.role || "");
+  const canUpdate = userRole === "ADMIN" || userRole === "CUSTOMER_SUPPORT";
+
+  if (userRole === "PRODUCT_MANAGER") {
+    return (
+      <StaffShell>
+        <div className="glass p-12 text-center max-w-lg mx-auto mt-12 rounded-2xl">
+          <h2 className="font-display text-xl font-bold text-ink">Access Restricted</h2>
+          <p className="mt-2 text-sm text-ink-soft">
+            Orders are managed exclusively by Customer Support specialists. Product Managers handle catalog items and inventory.
+          </p>
+        </div>
+      </StaffShell>
+    );
+  }
 
   const handleStatusChange = (id: string, newStatus: string) => {
-    if (confirm(`Change order status to ${newStatus}?`)) {
-      updateStatus({ id, status: newStatus as any });
-    }
+    setStatusMsg("");
+    updateStatus(
+      { id, status: newStatus as any },
+      {
+        onSuccess: () => {
+          setStatusMsg(`Order status updated to ${newStatus}`);
+          setTimeout(() => setStatusMsg(""), 3500);
+        },
+        onError: (err: any) => {
+          setStatusMsg(err?.response?.data?.message || "Failed to update order status");
+        },
+      }
+    );
   };
 
   return (
@@ -34,6 +55,14 @@ export default function StaffOrdersPage() {
       </Head>
       <StaffShell>
         <div className="space-y-6">
+          {statusMsg && (
+            <div className={`p-4 rounded-xl text-xs font-bold transition-all shadow-sm ${
+              statusMsg.includes("updated") ? "bg-emerald-500/15 text-emerald-800 border border-emerald-500/30" : "bg-rose-500/15 text-rose-800 border border-rose-500/30"
+            }`}>
+              {statusMsg}
+            </div>
+          )}
+
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-display text-2xl font-bold text-ink">Order Fulfillment</h1>
@@ -110,6 +139,7 @@ export default function StaffOrdersPage() {
                           {canUpdate && (
                             <CustomSelect
                               size="sm"
+                              direction="up"
                               disabled={isUpdating || order.status === "CANCELLED"}
                               value={order.status}
                               onChange={(val) => handleStatusChange(order.id, val)}

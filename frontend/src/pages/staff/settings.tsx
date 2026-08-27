@@ -1,14 +1,21 @@
 import Head from "next/head";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { StaffShell } from "@/components/layouts/StaffShell";
 import { useAuth } from "@/providers/AuthProvider";
 import { useUpdateMe } from "@/modules/users/hooks/useUpdateMe";
 import { useUploadAvatar } from "@/modules/users/hooks/useUploadAvatar";
 import { useCustomerProfile } from "@/modules/users/hooks/useCustomerProfile";
 import { useMyAddresses, useSaveAddress } from "@/modules/users/hooks/useMyAddresses";
-import { Mail, Phone, Lock, Save, Shield, UserCircle, KeyRound, MapPin, Camera, Loader2 } from "lucide-react";
+import { Mail, Phone, Lock, Save, Shield, UserCircle, KeyRound, MapPin, Camera, Loader2, Edit2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { OtpModal } from "@/components/shared/OtpModal";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { getCountryFlagIcon } from "@/components/ui/CountryFlags";
+import {
+  COUNTRIES,
+  getStatesForCountry,
+  getCitiesForState,
+} from "@/lib/locationData";
 import api from "@/lib/api";
 
 export default function StaffSettingsPage() {
@@ -27,6 +34,10 @@ export default function StaffSettingsPage() {
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.staffProfile?.phone || "");
   
+  // Field editing state
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  
   // Address state inside contact information
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
@@ -34,6 +45,27 @@ export default function StaffSettingsPage() {
   const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("IN");
+
+  const availableStates = useMemo(() => getStatesForCountry(country), [country]);
+  const availableCities = useMemo(() => getCitiesForState(state), [state]);
+
+  const handleCountryChange = (newCountry: string) => {
+    setCountry(newCountry);
+    const newStates = getStatesForCountry(newCountry);
+    const nextState = newStates.includes(state) ? state : newStates[0] || "";
+    setState(nextState);
+
+    const newCities = getCitiesForState(nextState);
+    const nextCity = newCities.includes(city) ? city : newCities[0] || "";
+    setCity(nextCity);
+  };
+
+  const handleStateChange = (newState: string) => {
+    setState(newState);
+    const newCities = getCitiesForState(newState);
+    const nextCity = newCities.includes(city) ? city : newCities[0] || "";
+    setCity(nextCity);
+  };
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -270,37 +302,69 @@ export default function StaffSettingsPage() {
               {/* Email & Phone */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                    Email Address
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
+                      Email Address
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingEmail(!isEditingEmail)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-neon-dark hover:underline transition"
+                    >
+                      <Edit2 size={11} /> {isEditingEmail ? "Lock Email" : "Edit Email"}
+                    </button>
+                  </div>
                   <div className="relative">
                     <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
                     <input
                       type="email"
                       required
+                      disabled={!isEditingEmail}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 pl-9 pr-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
+                      className={`h-10 w-full rounded-xl border pl-9 pr-3 text-sm transition outline-none ${
+                        isEditingEmail
+                          ? "border-neon bg-white text-ink ring-2 ring-neon/30 font-medium"
+                          : "border-ink/10 bg-slate-100/70 text-ink-soft cursor-not-allowed opacity-90"
+                      }`}
                     />
                   </div>
                   <p className="mt-1 text-[10px] text-ink-muted">
-                    Changing your email will require re-login.
+                    {isEditingEmail ? "Changing email sends an OTP code for security verification." : "Click Edit Email to modify address."}
                   </p>
                 </div>
+
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                    Phone Number
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
+                      Phone Number
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPhone(!isEditingPhone)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-neon-dark hover:underline transition"
+                    >
+                      <Edit2 size={11} /> {isEditingPhone ? "Lock Phone" : "Edit Phone"}
+                    </button>
+                  </div>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
                     <input
                       type="tel"
+                      disabled={!isEditingPhone}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+1 (555) 000-0000"
-                      className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 pl-9 pr-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
+                      className={`h-10 w-full rounded-xl border pl-9 pr-3 text-sm transition outline-none ${
+                        isEditingPhone
+                          ? "border-neon bg-white text-ink ring-2 ring-neon/30 font-medium"
+                          : "border-ink/10 bg-slate-100/70 text-ink-soft cursor-not-allowed opacity-90"
+                      }`}
                     />
                   </div>
+                  <p className="mt-1 text-[10px] text-ink-muted">
+                    {isEditingPhone ? "Enter your mobile or office contact number." : "Click Edit Phone to modify number."}
+                  </p>
                 </div>
               </div>
 
@@ -335,31 +399,38 @@ export default function StaffSettingsPage() {
                     className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 px-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Mumbai"
-                      className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 px-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="Maharashtra"
-                      className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 px-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <CustomSelect
+                    label="Country"
+                    labelClassName="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted"
+                    buttonClassName="!h-10 border-ink/10 bg-white/60 text-sm rounded-xl px-3"
+                    options={COUNTRIES.map((c) => ({
+                      value: c.code,
+                      label: c.name,
+                      icon: getCountryFlagIcon(c.code),
+                    }))}
+                    value={country}
+                    onChange={handleCountryChange}
+                  />
+
+                  <CustomSelect
+                    label="State"
+                    labelClassName="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted"
+                    buttonClassName="!h-10 border-ink/10 bg-white/60 text-sm rounded-xl px-3"
+                    options={availableStates.map((s) => ({ value: s, label: s }))}
+                    value={state}
+                    onChange={handleStateChange}
+                  />
+
+                  <CustomSelect
+                    label="City"
+                    labelClassName="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted"
+                    buttonClassName="!h-10 border-ink/10 bg-white/60 text-sm rounded-xl px-3"
+                    options={availableCities.map((ci) => ({ value: ci, label: ci }))}
+                    value={city}
+                    onChange={setCity}
+                  />
+
                   <div>
                     <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
                       Postal Code
@@ -369,18 +440,6 @@ export default function StaffSettingsPage() {
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
                       placeholder="400001"
-                      className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 px-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      placeholder="IN"
                       className="h-10 w-full rounded-xl border border-ink/10 bg-white/60 px-3 text-sm text-ink outline-none transition focus:border-neon focus:bg-white focus:ring-1 focus:ring-neon/30"
                     />
                   </div>

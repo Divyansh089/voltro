@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useWishlist } from "@/store/wishlist.store";
 import { useProducts } from "@/modules/products/hooks/useProducts";
 import { CATEGORY_PREVIEWS } from "@/lib/data";
+import { formatDescriptionPreview } from "@/lib/utils";
 
 export default function SearchPage() {
   const router = useRouter();
@@ -121,20 +122,19 @@ export default function SearchPage() {
                   <button
                     type="button"
                     onClick={() => wish.toggle(prod.id)}
-                    className={`absolute right-5 top-5 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-sm transition ${
-                      liked ? "text-rose-500" : "text-ink hover:text-rose-500"
-                    }`}
+                    className={`absolute right-5 top-5 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-sm transition ${liked ? "text-rose-500" : "text-ink hover:text-rose-500"
+                      }`}
                     aria-label="Wishlist"
                   >
                     <Heart size={16} fill={liked ? "currentColor" : "none"} />
                   </button>
 
                   <div>
-                    <div className="relative grid h-44 place-items-center overflow-hidden rounded-2xl bg-white/50 p-4">
+                    <div className="relative h-48 w-full overflow-hidden rounded-2xl bg-white/50">
                       <img
                         src={mainImg}
                         alt={prod.name}
-                        className="h-36 w-36 object-contain drop-shadow-xl transition-all duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
                       />
                     </div>
 
@@ -145,7 +145,7 @@ export default function SearchPage() {
                       <h3 className="font-display text-base font-bold text-ink line-clamp-1">
                         {prod.name}
                       </h3>
-                      <p className="text-xs text-ink-soft line-clamp-2">{prod.description}</p>
+                      <p className="text-xs text-ink-soft line-clamp-2">{formatDescriptionPreview(prod.description)}</p>
                     </div>
                   </div>
 

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { PRODUCTS, IMAGES } from "@/lib/data";
 import { useCategories } from "@/modules/products/hooks/useManageProducts";
+import { useProducts } from "@/modules/products/hooks/useProducts";
 
 /* ---------- Hero (Flagship Interactive Animated Pedestal Carousel) ---------- */
 const PEDESTAL_PRODUCTS = [
@@ -214,11 +215,13 @@ const DEFAULT_CATEGORIES = [
 
 function VoltraCategories() {
   const { data: dbCategories = [] } = useCategories();
+  const { data: productsData } = useProducts({ limit: 100 });
+  const allProducts = productsData?.data || [];
 
   const categoriesToDisplay = useMemo(() => {
-    if (!dbCategories || dbCategories.length === 0) return DEFAULT_CATEGORIES;
+    const listToUse = !dbCategories || dbCategories.length === 0 ? DEFAULT_CATEGORIES : dbCategories;
 
-    const sorted = [...dbCategories].sort((a: any, b: any) => {
+    const sorted = [...listToUse].sort((a: any, b: any) => {
       const aIndex = ORDERED_SLUGS.indexOf(a.slug.toLowerCase());
       const bIndex = ORDERED_SLUGS.indexOf(b.slug.toLowerCase());
       if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
@@ -227,8 +230,17 @@ function VoltraCategories() {
 
     return sorted.map((c: any) => {
       const slugLower = c.slug.toLowerCase();
-      const itemCount = c._count?.products ?? 0;
-      const imgSrc = CATEGORY_IMAGE_MAP[slugLower] || "/category/acc01.png";
+      // Count actual matching items from database product table
+      const countInDb = allProducts.filter(
+        (p: any) =>
+          p.categoryId === c.id ||
+          p.category?.id === c.id ||
+          p.category?.slug?.toLowerCase() === slugLower
+      ).length;
+
+      const itemCount = countInDb > 0 ? countInDb : (c._count?.products ?? 0);
+      const imgSrc = CATEGORY_IMAGE_MAP[slugLower] || c.imgSrc || "/category/acc01.png";
+
       return {
         id: c.id || c.slug,
         name: c.name,
@@ -237,7 +249,7 @@ function VoltraCategories() {
         imgSrc,
       };
     });
-  }, [dbCategories]);
+  }, [dbCategories, allProducts]);
 
   return (
     <section className="glass mt-8 p-6 md:p-8 rounded-3xl space-y-5">
