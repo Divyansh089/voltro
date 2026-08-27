@@ -56,7 +56,6 @@ router.get(
 const allowOrderUpdate = (req: any, res: any, next: any) => {
   if (
     req.user?.role === 'ADMIN' ||
-    req.user?.role === 'PRODUCT_MANAGER' ||
     req.user?.role === 'CUSTOMER_SUPPORT'
   ) {
     return next();
