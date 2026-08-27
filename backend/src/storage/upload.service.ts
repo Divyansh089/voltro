@@ -39,15 +39,25 @@ export class UploadService {
 
     log.info({ filename: file.originalname, size: file.size, folder }, 'Uploading file');
 
-    // Upload to Cloudinary
-    const result = await CloudinaryService.uploadBuffer(file.buffer, folder, {
-      publicId: options?.publicId,
-    });
+    try {
+      // Upload to Cloudinary
+      const result = await CloudinaryService.uploadBuffer(file.buffer, folder, {
+        publicId: options?.publicId,
+      });
 
-    return {
-      url: result.secure_url,
-      publicId: result.public_id,
-    };
+      return {
+        url: result.secure_url,
+        publicId: result.public_id,
+      };
+    } catch (err: any) {
+      log.warn({ error: err?.message || err, folder }, 'Cloudinary upload failed, falling back to Data URL');
+      const base64 = file.buffer.toString('base64');
+      const dataUrl = `data:${file.mimetype};base64,${base64}`;
+      return {
+        url: dataUrl,
+        publicId: `fallback_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      };
+    }
   }
 
   /**
