@@ -55,5 +55,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
 
-# Auto-sync database schema & seed initial data on boot if DATABASE_URL is set, then launch API server
-CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then echo 'Syncing database schema & seed...'; bunx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && bun run src/prisma/seed.ts; else echo 'DATABASE_URL not set, skipping migrations.'; fi && bun dist/server.js"]
+# Start backend server immediately (database sync & seed runs asynchronously inside server.ts)
+CMD ["bun", "dist/server.js"]

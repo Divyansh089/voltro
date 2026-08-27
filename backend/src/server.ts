@@ -1,12 +1,14 @@
 import app from './app';
 import { env, logger } from './config';
 import { configureCloudinary } from './config/cloudinary';
+import { exec } from 'child_process';
 
 /**
  * Server Bootstrap
  *
  * - Initializes external services (Cloudinary)
  * - Starts HTTP server
+ * - Auto-syncs database & seeds initial data asynchronously on boot
  * - Handles graceful shutdown (SIGTERM, SIGINT)
  * - Handles uncaught exceptions and unhandled rejections
  */
@@ -26,6 +28,21 @@ const server = app.listen(env.PORT, () => {
   );
   logger.info(`📚 API Docs: http://localhost:${env.PORT}/api/docs`);
   logger.info(`❤️  Health: http://localhost:${env.PORT}/api/${env.API_VERSION}/health`);
+
+  // Auto-sync database schema & seed initial data on boot without blocking HTTP port binding
+  if (process.env.DATABASE_URL) {
+    logger.info('Syncing database schema & running seed asynchronously...');
+    exec(
+      'bunx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && bun run src/prisma/seed.ts',
+      (err, stdout, _stderr) => {
+        if (err) {
+          logger.error({ error: err.message }, 'Database schema sync / seed notice');
+        } else {
+          logger.info({ output: stdout }, '✅ Database schema sync & seed completed successfully');
+        }
+      }
+    );
+  }
 });
 
 // ── Graceful Shutdown ───────────────────────────────────
