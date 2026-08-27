@@ -157,6 +157,7 @@
     box-shadow: var(--glass-shadow);
     border-radius: var(--radius);
   }
+
   .glass-soft {
     background: rgba(255, 255, 255, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.55);
@@ -164,20 +165,24 @@
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     border-radius: 20px;
   }
+
   .panel-dark {
     background: linear-gradient(180deg, #0b1220 0%, #0e1628 100%);
     color: #e2e8f0;
   }
+
   .glass-dark {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(14px);
     border-radius: 20px;
   }
+
   .chip-ghost {
     background: rgba(255, 255, 255, 0.4);
     color: var(--text-primary);
   }
+
   .btn-neon {
     background: var(--accent-neon);
     color: var(--text-primary);
@@ -187,14 +192,17 @@
       background-color 0.2s ease,
       transform 0.15s ease;
   }
+
   .btn-neon:hover {
     background: var(--accent-neon-hover);
   }
+
   .btn-ink {
     background: #0f172a;
     color: #fff;
     border-radius: 999px;
   }
+
   .chip {
     border-radius: 999px;
     padding: 6px 12px;
@@ -205,13 +213,43 @@
   }
 }
 
+/* Custom Sleek Voltra Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.25);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ccff00;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.25);
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ccff00;
+}
+
 @layer utilities {
   .text-ink {
     color: var(--text-primary);
   }
+
   .text-ink-soft {
     color: var(--text-secondary);
   }
+
   .text-ink-muted {
     color: var(--text-muted);
   }
@@ -221,13 +259,16 @@
 .perspective-1000 {
   perspective: 1000px;
 }
+
 .transform-style-3d {
   transform-style: preserve-3d;
 }
+
 .backface-hidden {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
@@ -240,6 +281,7 @@
     margin: 0 !important;
     padding: 0 !important;
   }
+
   header,
   footer,
   nav,
