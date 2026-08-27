@@ -4,13 +4,13 @@ import { env } from '../config/env';
 import { UnauthorizedError } from '../common/errors';
 import { CacheService } from '../cache/cache.service';
 import { CacheKeys } from '../cache/cacheKeys';
-import type { IRequestUser } from '../common/interfaces';
+import prisma from '../prisma/prismaClient';
 
 /**
  * Authentication Middleware
  *
  * Verifies the JWT access token from the Authorization header.
- * Validates the session exists in Redis.
+ * Validates the session exists in Redis or falls back to PostgreSQL DB.
  * Attaches the decoded user to req.user.
  */
 export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
@@ -18,63 +18,84 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
     // Extract Bearer token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log("[DEBUG] Auth Header missing or invalid:", authHeader);
-      throw new UnauthorizedError('Access token is required');
+      return next(new UnauthorizedError('Access token is required'));
     }
 
     const token = authHeader.split(' ')[1];
     if (!token) {
-      console.log("[DEBUG] Token missing after split");
-      throw new UnauthorizedError('Access token is required');
+      return next(new UnauthorizedError('Access token is required'));
     }
 
     // Verify JWT
-    let decoded;
+    let decoded: any;
     try {
       decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as any;
     } catch (err: any) {
-      console.log("[DEBUG] JWT verify failed:", err.message);
-      throw err;
+      if (err.name === 'TokenExpiredError') {
+        return next(new UnauthorizedError('Access token has expired'));
+      }
+      return next(new UnauthorizedError('Invalid access token'));
     }
 
-    // Validate session exists in Redis (async, but we handle it)
+    // 1. Check Redis cache first
     CacheService.get<{ userId: string; role: string }>(CacheKeys.session(decoded.sessionId))
-      .then((session) => {
-        if (!session) {
-          console.log("[DEBUG] Session missing from Redis for ID:", decoded.sessionId);
-          return next(new UnauthorizedError('Session has been invalidated'));
+      .then(async (session) => {
+        if (session) {
+          (req as any).user = {
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            role: decoded.role,
+          };
+          return next();
         }
 
-        // Attach user to request
-        (req as any).user = {
-          userId: decoded.userId,
-          sessionId: decoded.sessionId,
-          role: decoded.role,
-        };
+        // 2. Database Fallback: Check PostgreSQL if Redis missed/failed
+        try {
+          const dbSession = await prisma.session.findUnique({
+            where: { id: decoded.sessionId },
+            include: { user: { include: { role: true } } },
+          });
 
-        next();
+          if (!dbSession || !dbSession.isActive || dbSession.expiresAt < new Date()) {
+            console.log("[DEBUG] Session missing or inactive in DB for ID:", decoded.sessionId);
+            return next(new UnauthorizedError('Session has been invalidated'));
+          }
+
+          // Asynchronously re-cache valid session into Redis
+          CacheService.set(
+            CacheKeys.session(decoded.sessionId),
+            { userId: dbSession.userId, role: dbSession.user.role.name },
+            60 * 60 * 24
+          ).catch(() => {});
+
+          (req as any).user = {
+            userId: dbSession.userId,
+            sessionId: dbSession.id,
+            role: dbSession.user.role.name,
+          };
+
+          next();
+        } catch (dbErr) {
+          // If DB query fails, fall back to decoded JWT token info
+          (req as any).user = {
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            role: decoded.role,
+          };
+          next();
+        }
       })
-      .catch((err) => {
-        console.log("[DEBUG] CacheService error:", err);
-        // Redis unavailable — fall through (graceful degradation)
+      .catch(() => {
+        // Redis unavailable — fall through to decoded JWT payload
         (req as any).user = {
           userId: decoded.userId,
           sessionId: decoded.sessionId,
           role: decoded.role,
         };
-
         next();
       });
   } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      next(error);
-    } else if ((error as any).name === 'TokenExpiredError') {
-      next(new UnauthorizedError('Access token has expired'));
-    } else if ((error as any).name === 'JsonWebTokenError') {
-      next(new UnauthorizedError('Invalid access token'));
-    } else {
-      next(error);
-    }
+    next(error);
   }
 }
 

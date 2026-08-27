@@ -1,5 +1,6 @@
 import multer from 'multer';
 import { UPLOAD_DEFAULTS } from '../config/cloudinary';
+import { BadRequestError } from '../common/errors';
 
 /**
  * Upload Middleware Configuration (Multer)
@@ -21,7 +22,7 @@ const fileFilter = (
   if (UPLOAD_DEFAULTS.ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed: ${UPLOAD_DEFAULTS.ALLOWED_MIME_TYPES.join(', ')}`));
+    cb(new BadRequestError(`Invalid file type (${file.mimetype}). Allowed: ${UPLOAD_DEFAULTS.ALLOWED_MIME_TYPES.join(', ')}`));
   }
 };
 
