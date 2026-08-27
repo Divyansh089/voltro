@@ -5,7 +5,7 @@ import type { CorsOptions } from 'cors';
  * CORS Configuration
  *
  * In development: Allow configured origins
- * In production: Strict whitelist of allowed origins
+ * In production: Whitelist allowed origins & Vercel deployment domains (*.vercel.app)
  */
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
@@ -17,10 +17,16 @@ export const corsOptions: CorsOptions = {
       return;
     }
 
-    if (allowedOrigins.includes(origin)) {
+    // Allow exact matches from CORS_ORIGINS or any Vercel domain (*.vercel.app)
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      /\.vercel\.app$/.test(origin) ||
+      env.NODE_ENV !== 'production';
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      callback(null, false);
     }
   },
 
