@@ -41,9 +41,9 @@ ENV NODE_ENV=production
 COPY package.json ./
 RUN bun install --production
 
-# Copy compiled dist and Prisma schema
+# Copy compiled dist and Prisma directory (schema & seed)
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/src/prisma/schema.prisma ./src/prisma/schema.prisma
+COPY --from=build /app/src/prisma ./src/prisma
 
 # Re-generate Prisma Client inside production runtime stage
 RUN bunx prisma generate --schema=src/prisma/schema.prisma
