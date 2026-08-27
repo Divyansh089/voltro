@@ -26,9 +26,6 @@
   "author": "Voltra Engineering",
   "license": "UNLICENSED",
   "private": true,
-  "prisma": {
-    "schema": "src/prisma/schema.prisma"
-  },
   "dependencies": {
     "@prisma/client": "^6.9.0",
     "bcryptjs": "^2.4.3",
