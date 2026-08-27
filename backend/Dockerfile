@@ -55,5 +55,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
 
-# Auto-apply database migrations on boot if DATABASE_URL is set, then launch API server
-CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then echo 'Running database migrations...'; bunx prisma migrate deploy --schema=src/prisma/schema.prisma; else echo 'DATABASE_URL not set, skipping migrations.'; fi && bun dist/server.js"]
+# Auto-apply database migrations & seed initial data on boot if DATABASE_URL is set, then launch API server
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then echo 'Running database migrations & seed...'; bunx prisma migrate deploy --schema=src/prisma/schema.prisma && bun run src/prisma/seed.ts; else echo 'DATABASE_URL not set, skipping migrations.'; fi && bun dist/server.js"]
