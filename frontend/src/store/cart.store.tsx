@@ -76,21 +76,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const backendCart = res.data?.data || res.data;
 
           if (!isCancelled && backendCart?.items) {
-            const mappedItems: CartItem[] = backendCart.items.map((i: any) => ({
-              id: i.id,
-              variantId: i.variantId,
-              name: i.variant?.product?.name || i.variant?.name || "Product",
-              price: Number(i.price || 0),
-              image:
+            const mappedItems: CartItem[] = backendCart.items.map((i: any) => {
+              const itemKey = i.variantId || i.id;
+              const prodName = i.product?.name || i.variant?.product?.name || "Product";
+              const varName = i.variant?.name && i.variant.name !== "Default" ? i.variant.name : "";
+              const variantSpecs = varName || i.variant?.options?.map((o: any) => o.value).join(" / ") || "";
+              
+              const displayName = variantSpecs && !prodName.includes(variantSpecs)
+                ? `${prodName} (${variantSpecs})`
+                : prodName;
+
+              const imageUrl =
+                i.product?.image ||
+                i.variant?.product?.images?.find((img: any) => img.isPrimary)?.url ||
                 i.variant?.product?.images?.[0]?.url ||
                 i.variant?.product?.images?.[0]?.imageUrl ||
-                "/placeholder.png",
-              category: i.variant?.product?.category || "Gadgets",
-              color: i.variant?.color || "#0F172A",
-              rating: 5,
-              reviews: 0,
-              qty: i.quantity,
-            }));
+                i.image ||
+                "/placeholder.png";
+
+              return {
+                id: itemKey,
+                variantId: i.variantId,
+                name: displayName,
+                price: Number(i.price || i.variant?.price || 0),
+                image: imageUrl,
+                category: i.product?.category || i.variant?.product?.category?.name || "Hardware",
+                color: i.variant?.color || "#0F172A",
+                rating: 5,
+                reviews: 0,
+                qty: i.quantity,
+              };
+            });
             setItems(mappedItems);
           }
         } catch (err) {
@@ -128,16 +144,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, isLoaded, user]);
 
   const add = async (p: CartProduct, qty = 1) => {
+    const targetKey = p.variantId ? p.variantId : p.id;
+
     setItems((prev) => {
-      const ex = prev.find((i) => i.id === p.id || (p.variantId && i.variantId === p.variantId));
-      if (ex) {
-        return prev.map((i) =>
-          i.id === p.id || (p.variantId && i.variantId === p.variantId)
-            ? { ...i, qty: i.qty + qty }
-            : i
+      const exIndex = prev.findIndex((i) => (i.variantId ? i.variantId : i.id) === targetKey);
+      if (exIndex > -1) {
+        return prev.map((item, idx) =>
+          idx === exIndex ? { ...item, qty: item.qty + qty } : item
         );
       }
-      return [...prev, { ...p, qty }];
+      return [...prev, { ...p, id: targetKey, qty }];
     });
 
     if (user && p.variantId) {
