@@ -13,18 +13,17 @@ const log = createModuleLogger('redis');
  */
 const redis = new Redis(env.REDIS_URL, {
   keyPrefix: 'voltra:',
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: 1,
   retryStrategy: (times) => {
-    if (times > 10) {
-      log.error('Redis max retries exceeded. Giving up.');
-      return null; // Stop retrying
+    if (times > 3) {
+      log.warn('Redis unavailable after 3 attempts. Falling back to PostgreSQL DB.');
+      return null; // Stop retrying quickly to avoid log spam
     }
-    const delay = Math.min(times * 200, 5000); // Exponential backoff, max 5s
-    log.warn({ attempt: times, delay }, 'Redis reconnecting...');
-    return delay;
+    return Math.min(times * 300, 2000);
   },
   lazyConnect: false,
   enableReadyCheck: true,
+  showFriendlyErrorStack: true,
 });
 
 // Connection event handlers
@@ -36,8 +35,12 @@ redis.on('ready', () => {
   log.info('Redis ready');
 });
 
-redis.on('error', (err) => {
-  log.error({ err }, 'Redis error');
+redis.on('error', (err: any) => {
+  if (err?.code === 'ECONNRESET' || err?.code === 'ECONNREFUSED') {
+    log.debug({ code: err.code }, 'Redis connection reset/refused');
+  } else {
+    log.error({ err }, 'Redis error');
+  }
 });
 
 redis.on('close', () => {
