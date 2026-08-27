@@ -20,7 +20,7 @@ export function useUpdateOrderStatus() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+      queryClient.invalidateQueries();
     },
   });
 }

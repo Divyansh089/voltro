@@ -12,7 +12,11 @@ export function useUploadAvatar() {
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await api.post("/users/me/avatar", formData);
+      const res = await api.post("/users/me/avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       return res.data?.data;
     },

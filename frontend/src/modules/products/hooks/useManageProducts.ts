@@ -61,7 +61,11 @@ export function useUploadProductImage() {
       if (altText) formData.append("altText", altText);
       formData.append("isPrimary", String(isPrimary));
 
-      const res = await api.post(`/products/${productId}/images`, formData);
+      const res = await api.post(`/products/${productId}/images`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return res.data?.data;
     },
     onSuccess: () => {
