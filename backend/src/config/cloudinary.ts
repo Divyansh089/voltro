@@ -32,10 +32,10 @@ export const CLOUDINARY_FOLDERS = {
 
 /** Default upload options */
 export const UPLOAD_DEFAULTS = {
-  /** Max file size in bytes (5MB) */
-  MAX_FILE_SIZE: 5 * 1024 * 1024,
+  /** Max file size in bytes (10MB) */
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
   /** Allowed MIME types */
-  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'image/webp'] as string[],
+  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/svg+xml'] as string[],
   /** Default quality for optimization */
   DEFAULT_QUALITY: 80,
   /** Max width for product images */
