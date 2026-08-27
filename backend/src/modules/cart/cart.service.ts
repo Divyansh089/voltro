@@ -12,7 +12,13 @@ export class CartService {
         variant: {
           include: {
             product: {
-              select: { id: true, name: true, slug: true, images: { where: { isPrimary: true }, take: 1 } },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                category: { select: { name: true } },
+                images: { select: { url: true, isPrimary: true } },
+              },
             },
             inventory: { select: { quantity: true } },
           },
@@ -28,6 +34,11 @@ export class CartService {
       const price = Number(item.variant.price || item.variant.product.basePrice);
       const total = price * item.quantity;
       subtotal += total;
+
+      const primaryImg =
+        item.variant.product.images?.find((img: any) => img.isPrimary)?.url ||
+        item.variant.product.images?.[0]?.url ||
+        null;
 
       return {
         id: item.id,
@@ -49,7 +60,8 @@ export class CartService {
           id: item.variant.product.id,
           name: item.variant.product.name,
           slug: item.variant.product.slug,
-          image: item.variant.product.images[0]?.url || null,
+          category: item.variant.product.category?.name || 'Hardware',
+          image: primaryImg,
         },
       };
     });
