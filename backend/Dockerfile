@@ -22,8 +22,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client binary for Bun/Alpine
-RUN bunx prisma generate
+# Generate Prisma Client binary for Bun/Alpine with explicit schema path
+RUN bunx prisma generate --schema=src/prisma/schema.prisma
 
 # Compile TypeScript to JavaScript
 RUN bun run build
@@ -46,7 +46,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/prisma/schema.prisma ./src/prisma/schema.prisma
 
 # Re-generate Prisma Client inside production runtime stage
-RUN bunx prisma generate
+RUN bunx prisma generate --schema=src/prisma/schema.prisma
 
 # Expose HTTP port
 EXPOSE 3000
@@ -56,4 +56,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
 
 # Auto-apply database migrations on boot if DATABASE_URL is set, then launch API server
-CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then echo 'Running database migrations...'; bunx prisma migrate deploy; else echo 'DATABASE_URL not set, skipping migrations.'; fi && bun dist/server.js"]
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then echo 'Running database migrations...'; bunx prisma migrate deploy --schema=src/prisma/schema.prisma; else echo 'DATABASE_URL not set, skipping migrations.'; fi && bun dist/server.js"]
