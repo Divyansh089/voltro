@@ -70,11 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return updated;
         });
       }
-    } catch (err) {
-      console.warn("Session expired or unauthenticated:", err);
-      StorageService.clearAuth();
-      setUser(null);
-      setPermissions([]);
+    } catch (err: any) {
+      console.warn("Session check or refresh info:", err);
+      if (err?.response?.status === 401) {
+        StorageService.clearAuth();
+        setUser(null);
+        setPermissions([]);
+      }
     }
   }, []);
 
