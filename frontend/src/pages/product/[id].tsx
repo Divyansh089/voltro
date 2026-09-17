@@ -160,7 +160,15 @@ export default function ProductDetailPage({ productId: serverProductId }: { prod
   const wish = useWishlist();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isPortrait, setIsPortrait] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    if (naturalHeight && naturalWidth) {
+      setIsPortrait(naturalHeight > naturalWidth * 1.05);
+    }
+  };
 
   // Reviews State loaded dynamically from PostgreSQL Database
   const [reviewsList, setReviewsList] = useState<any[]>([]);
@@ -639,42 +647,58 @@ export default function ProductDetailPage({ productId: serverProductId }: { prod
         <div className="grid grid-cols-12 gap-8">
           {/* Gallery Column */}
           <div className="col-span-12 lg:col-span-7 space-y-6">
-            <div className="glass relative flex h-[460px] items-center justify-center overflow-hidden p-6 rounded-3xl">
-              <button
-                onClick={() => wish.toggle(product.id)}
-                className={`absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/80 backdrop-blur-md shadow-md transition ${
-                  liked ? "text-rose-500" : "text-ink hover:text-rose-500"
+            <div className="flex flex-col-reverse sm:flex-row gap-4 items-start justify-start">
+              {/* Vertical Left Thumbnails (Fixed Amazon Style) */}
+              {images.length > 1 && (
+                <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto w-full sm:w-auto max-h-[520px] shrink-0 scrollbar-none py-1 px-1">
+                  {images.map((imgUrl: string, idx: number) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all duration-200 ${
+                        selectedImageIndex === idx
+                          ? "border-neon ring-2 ring-neon/40 shadow-md scale-[1.03] bg-white"
+                          : "border-ink/10 bg-white/70 hover:border-ink/30 hover:bg-white"
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`${product.name} ${idx}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main Image Display Window (Resizes dynamically according to photo aspect ratio & fills image) */}
+              <div
+                className={`glass relative overflow-hidden rounded-3xl bg-white/90 backdrop-blur-md border border-ink/10 shadow-sm transition-all duration-300 ${
+                  isPortrait
+                    ? "w-full max-w-[360px] sm:max-w-[400px] h-[460px] sm:h-[520px]"
+                    : "w-full max-w-full h-[360px] sm:h-[480px]"
                 }`}
-                aria-label="Wishlist"
               >
-                <Heart size={18} fill={liked ? "currentColor" : "none"} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => wish.toggle(product.id)}
+                  className={`absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/90 backdrop-blur-md shadow-md transition-transform hover:scale-110 ${
+                    liked ? "text-rose-500" : "text-ink hover:text-rose-500"
+                  }`}
+                  aria-label="Wishlist"
+                >
+                  <Heart size={18} fill={liked ? "currentColor" : "none"} />
+                </button>
 
-              <img
-                src={activeImage}
-                alt={product.name}
-                className="h-80 w-80 object-contain drop-shadow-2xl transition-all duration-300 hover:scale-105"
-              />
-            </div>
-
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {images.map((imgUrl: string, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImageIndex(idx)}
-                    className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 transition ${
-                      selectedImageIndex === idx
-                        ? "border-neon bg-white shadow-md"
-                        : "border-transparent bg-white/60 hover:bg-white"
-                    }`}
-                  >
-                    <img src={imgUrl} alt={`${product.name} ${idx}`} className="h-14 w-14 object-contain" />
-                  </button>
-                ))}
+                <img
+                  src={activeImage}
+                  alt={product.name}
+                  onLoad={handleImageLoad}
+                  className="h-full w-full object-cover transition-all duration-300 hover:scale-105"
+                />
               </div>
-            )}
+            </div>
 
             {/* Overview & Specs */}
             <div className="glass p-6 md:p-8 rounded-3xl space-y-4">
