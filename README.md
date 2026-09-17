@@ -6,6 +6,32 @@ Combining futuristic glassmorphism design aesthetics with a resilient multi-tena
 
 ---
 
+## 🛠️ Tech Stack
+
+### **Frontend**
+![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Radix UI](https://img.shields.io/badge/Radix_UI-161618?style=for-the-badge&logo=radixui&logoColor=white)
+![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-F56565?style=for-the-badge&logo=feather&logoColor=white)
+
+### **Backend & Database**
+![Node.js](https://img.shields.io/badge/Node.js_v20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express_5-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma_ORM_v6-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod_Validation-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT_Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+
+### **Infrastructure, Storage & Tooling**
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
+![Swagger](https://img.shields.io/badge/OpenAPI_3.0_/_Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Pino](https://img.shields.io/badge/Pino_Logger-006600?style=for-the-badge&logo=pnpm&logoColor=white)
+
+---
+
 ## 🖼️ Platform Preview / Screenshots
 
 > *Add your platform screenshots below to showcase the storefront and administration features.*
@@ -80,24 +106,6 @@ Managing an e-commerce platform shouldn't require code deployments for daily upd
 - **Link Live Products in Seconds**: Easily link homepage showcase cards directly to live database product UUIDs via centralized mapping configuration.
 - **Automated Stock Syncing**: Real-time inventory tracking automatically updates product availability states across the entire storefront upon order placement.
 - **Declarative Database Seeding**: Run `npx prisma db push` and `npm run seed` to initialize roles, permissions, categories, and sample products seamlessly.
-
----
-
-## 🛠️ Tech Stack
-
-### **Frontend**
-- **Framework**: Next.js 15, React 19, TypeScript
-- **Styling**: Vanilla CSS, Tailwind CSS, Glassmorphism design system
-- **Icons & UI**: Lucide React, Radix UI primitives
-- **State & Data Fetching**: React Hooks, Axios / Fetch API
-
-### **Backend**
-- **Runtime**: Node.js (v20+)
-- **Framework**: Express 5, TypeScript
-- **Database & ORM**: PostgreSQL, Prisma ORM (v6)
-- **Caching & Security**: Redis (ioredis), Helmet, CORS, Express Rate Limit, bcryptjs, JSON Web Tokens (JWT)
-- **File Uploads & Media**: Cloudinary SDK, Multer, Sharp
-- **Logging & Validation**: Pino, Pino-HTTP, Zod, Swagger UI / OpenAPI 3.0
 
 ---
 
