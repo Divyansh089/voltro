@@ -34,20 +34,14 @@ Combining futuristic glassmorphism design aesthetics with a resilient multi-tena
 
 ## 🖼️ Platform Preview / Screenshots
 
-> *Add your platform screenshots below to showcase the storefront and administration features.*
-
-```markdown
-<!-- Replace the placeholder paths below with your actual screenshot paths or URLs -->
-
 ### 🌟 Storefront Bento Showcase
-![Storefront Bento Showcase](./docs/screenshots/storefront-hero.png)
-
-### 📱 Product Detail & Adaptive Gallery
-![Product Detail View](./docs/screenshots/product-detail.png)
+![Storefront Bento Showcase](./frontend/public/Screenshot/Screenshot01.png)
 
 ### 📊 Admin & Analytics Dashboard
-![Admin Dashboard](./docs/screenshots/admin-dashboard.png)
-```
+![Admin Dashboard](./frontend/public/Screenshot/Screenshot02.png)
+
+### 📱 Product Management Admin
+![Product Management](./frontend/public/Screenshot/Screenshot03.png)
 
 ---
 
