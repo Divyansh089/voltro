@@ -43,6 +43,7 @@ export function CustomSelect({
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -99,7 +100,12 @@ export function CustomSelect({
   // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!menuRef.current || !menuRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     };
@@ -123,6 +129,7 @@ export function CustomSelect({
 
   const menuContent = isOpen && (
     <div
+      ref={menuRef}
       style={usePortal ? menuStyle : undefined}
       className={`${
         usePortal
