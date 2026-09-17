@@ -293,6 +293,24 @@ function VoltraCategories() {
 
 /* ---------- Trending Now — Exact Bento Showcase Grid ---------- */
 function TrendingNow() {
+  // Put your created product IDs here to link any homepage card directly to a live DB product page!
+  const TRENDING_PRODUCT_IDS: Record<string, string> = {
+    voltraBookMini: "c5648f7b-bbb5-43a2-b350-0a05c9a5d531",
+    voltraDrone: "24342085-11fa-47af-86e6-222b690dbb37",
+    voltraHeadset: "a34a06ae-d95b-4bd2-8cba-d55fcea9dbc2",
+    voltraBudsX: "846e2aba-ba0c-4d07-8dc9-4ab11781bd71",
+    voltraTablet: "3f5194d8-6119-4f3d-8248-4d10bf14d26b",
+    voltraBookPro: "1720ce89-9c20-4f7a-9b49-aae37864b176",
+    voltraTabletPro: "91e7cead-838c-4f51-8fc4-b11dbc6e4886",
+    voltraCable: "f619a4c4-7591-45f9-aeac-9fa1abf0dc6d",
+    voltraPhone15: "52cd459f-dd9c-4dac-ada6-b144c63a7124",
+  };
+
+  const getCardHref = (key: keyof typeof TRENDING_PRODUCT_IDS, fallbackCategoryUrl: string) => {
+    const id = TRENDING_PRODUCT_IDS[key];
+    return id && id.trim() ? `/product/${id.trim()}` : fallbackCategoryUrl;
+  };
+
   return (
     <section className="glass mt-8 p-6 md:p-8 rounded-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -314,31 +332,27 @@ function TrendingNow() {
       <div className="grid grid-cols-12 gap-4">
         {/* ROW 1 & 2: LEFT BLOCK (Col 1-6) */}
 
-        {/* Card 1: Voltra Book Pro M3 (Top Left Wide) */}
+        {/* Card 1: Voltra Book Mini (Top Left Wide) */}
         <Link
-          href="/categories/laptops"
+          href={getCardHref("voltraBookMini", "/categories/laptops")}
           className="group relative col-span-12 lg:col-span-6 flex h-60 sm:h-64 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
             src="/trending/voltra-book3.png"
-            alt="Voltra Book Pro M3"
+            alt="Voltra Book Mini"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="relative z-10 flex items-start justify-between">
             <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
               TRENDING
             </span>
-            <span className="font-display text-xl font-extrabold text-ink">${1899}</span>
+            <span className="font-display text-xl font-extrabold text-ink">${1199}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between gap-4">
             <div>
               <h3 className="font-display text-xl md:text-2xl font-extrabold text-ink">
-                Voltra Book Pro M3
+                Voltra Book Mini
               </h3>
-              <p className="text-xs font-medium text-ink-soft mt-0.5 max-w-xs">
-                Next-Gen M3 Max Processing &amp; Retina XDR Display
-              </p>
-              <div className="font-display text-xl font-extrabold text-ink mt-2">${1899}</div>
             </div>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
@@ -346,24 +360,22 @@ function TrendingNow() {
           </div>
         </Link>
 
-        {/* Card 2: Laser-Etched Processor (Tall Center Feature - Spans 2 Rows) */}
+        {/* Card 2: Voltra Drone (Tall Feature - Spans 2 Rows) */}
         <Link
-          href="/categories/all"
+          href={getCardHref("voltraDrone", "/categories/drones")}
           className="group relative col-span-12 md:col-span-6 lg:col-span-3 lg:row-span-2 flex h-80 lg:h-full min-h-[460px] flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#C5C8CC] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
             src="/trending/voltra-sky.png"
-            alt="Laser-Etched Processor"
+            alt="Voltra Drone"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="relative z-10 flex items-start justify-end">
-            <span className="font-display text-xl font-extrabold text-ink">${1899}</span>
+            <span className="font-display text-xl font-extrabold text-ink">${499}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between gap-2">
             <h3 className="font-display text-xl md:text-2xl font-extrabold uppercase leading-tight text-ink">
-              LASER-ETCHED
-              <br />
-              PROCESSOR
+              VOLTRA DRONE
             </h3>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
@@ -371,121 +383,99 @@ function TrendingNow() {
           </div>
         </Link>
 
-        {/* Card 3: Voltra Sound Pro Headphones & Buds (Top Right) */}
+        {/* Card 3: Voltra Headset (Top Right) */}
         <Link
-          href="/categories/audio"
+          href={getCardHref("voltraHeadset", "/categories/audio")}
           className="group relative col-span-12 md:col-span-6 lg:col-span-3 flex h-60 sm:h-64 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
             src="/trending/voltra-headset.png"
-            alt="Voltra Sound Pro Headphones & Buds"
+            alt="Voltra Headset"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="relative z-10 flex items-start justify-between">
-            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
-              AUDIO COLLECTION
-            </span>
-            <span className="font-display text-xl font-extrabold text-ink">${179}</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-white drop-shadow-md">${159}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between gap-2">
-            <h3 className="font-display text-lg md:text-xl font-extrabold text-ink leading-tight max-w-[180px]">
-              Voltra Sound Pro Headphones &amp; Buds
+            <h3 className="font-display text-lg md:text-xl font-extrabold text-white drop-shadow-md leading-tight">
+              Voltra Headset
             </h3>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
+            </span>
+          </div>
+        </Link>
+
+        {/* Card 4: Voltra Buds X (Middle Left A) */}
+        <Link
+          href={getCardHref("voltraBudsX", "/categories/audio")}
+          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/trending/X-buds.png"
+            alt="Voltra Buds X"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-white drop-shadow-md">${59}</span>
+          </div>
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-white drop-shadow-md uppercase leading-tight">
+                VOLTRA BUDS X
+              </h3>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
+              <ArrowUpRight size={16} />
+            </span>
+          </div>
+        </Link>
+
+        {/* Card 5: Voltra Tablet (Middle Left B) */}
+        <Link
+          href={getCardHref("voltraTablet", "/categories/tablets")}
+          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+        >
+          <img
+            src="/trending/tablet01.png"
+            alt="Voltra Tablet"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-ink">${799}</span>
+          </div>
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div>
+              <h3 className="font-display text-lg font-extrabold text-ink uppercase leading-tight">
+                VOLTRA TABLET
+              </h3>
+            </div>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
             </span>
           </div>
         </Link>
 
-        {/* Card 4: Voltra X-Buds Pro (Middle Left A) */}
+        {/* Card 6: Voltra Book Pro (Middle Right) */}
         <Link
-          href="/categories/audio"
-          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#333] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+          href={getCardHref("voltraBookPro", "/categories/laptops")}
+          className="group relative col-span-12 md:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
-            src="/trending/X-buds.png"
-            alt="Voltra X-Buds Pro"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+            src="/category/laptop03.png"
+            alt="Voltra Book Pro"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex items-start justify-between">
-            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
-              BEST SELLER
-            </span>
-            <span className="font-display text-xl font-extrabold text-white">${199}</span>
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-transparent to-slate-950/70 pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-white drop-shadow-md">${1499}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between gap-2">
             <div>
-              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
-                VOLTRA X-BUDS PRO
+              <h3 className="font-display text-lg font-extrabold text-white drop-shadow-md uppercase leading-tight">
+                VOLTRA BOOK PRO
               </h3>
-              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[200px]">
-                Voltra X-Buds Pro - Active Noise Cancellation &amp; Spatial Audio.
-              </p>
-            </div>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
-              <ArrowUpRight size={16} />
-            </span>
-          </div>
-        </Link>
-
-        {/* Card 5: Voltra Gaming Chip (Middle Left B) */}
-        <Link
-          href="/categories/all"
-          className="group relative col-span-12 sm:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#222] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-        >
-          <img
-            src="/trending/voltra-sky.png"
-            alt="Voltra Gaming Chip"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 mix-blend-luminosity"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex items-start justify-between">
-            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
-              GAMING TECH
-            </span>
-            <span className="font-display text-xl font-extrabold text-white">${199}</span>
-          </div>
-          <div className="relative z-10 flex items-end justify-between gap-2">
-            <div>
-              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
-                VOLTRA GAMING CHIP
-              </h3>
-              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[190px]">
-                Voltra Gaming Processing - Powering Immersive Graphics.
-              </p>
-            </div>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
-              <ArrowUpRight size={16} />
-            </span>
-          </div>
-        </Link>
-
-        {/* Card 6: Voltra Pro Gaming Headset (Middle Right) */}
-        <Link
-          href="/categories/audio"
-          className="group relative col-span-12 md:col-span-6 lg:col-span-3 flex h-52 sm:h-56 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#333] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-        >
-          <img
-            src="/trending/voltra-headset.png"
-            alt="Voltra Pro Gaming Headset"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex items-start justify-between">
-            <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
-              AUDIO COLLECTION
-            </span>
-            <span className="font-display text-xl font-extrabold text-white">${149}</span>
-          </div>
-          <div className="relative z-10 flex items-end justify-between gap-2">
-            <div>
-              <h3 className="font-display text-lg font-extrabold text-white uppercase leading-tight">
-                VOLTRA PRO GAMING HEADSET
-              </h3>
-              <p className="text-xs font-medium text-slate-200 mt-1 max-w-[190px]">
-                Surround Sound &amp; Detachable Mic - Dominate the Lobby.
-              </p>
             </div>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
@@ -495,30 +485,27 @@ function TrendingNow() {
 
         {/* ROW 3: 3 CARDS (LEFT TABLET, CENTER CABLE, RIGHT PHONE WITH RIGHT-ALIGNED TEXT & NO LOGO) */}
 
-        {/* Card 7: Voltra Creator Tablet (Bottom Left - Wide 5 Cols) */}
+        {/* Card 7: Voltra Tablet Pro (Bottom Left - Wide 5 Cols) */}
         <Link
-          href="/categories/tablets"
+          href={getCardHref("voltraTabletPro", "/categories/tablets")}
           className="group relative col-span-12 lg:col-span-5 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
             src="/trending/voltra-tablet.png"
-            alt="Voltra Creator Tablet"
+            alt="Voltra Tablet Pro"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="relative z-10 flex items-start justify-between">
             <span className="rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-ink border border-white/80 shadow-sm">
               TRENDING
             </span>
-            <span className="font-display text-xl font-extrabold text-ink">${999}</span>
+            <span className="font-display text-xl font-extrabold text-ink">${1099}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between gap-4">
             <div>
-              <h3 className="font-display text-lg font-extrabold text-ink leading-tight">
-                VOLTRA CREATOR TABLET
+              <h3 className="font-display text-lg font-extrabold text-ink leading-tight uppercase">
+                VOLTRA TABLET PRO
               </h3>
-              <p className="text-[11px] font-medium text-ink-soft mt-0.5 max-w-xs">
-                Voltra Creator Tablet - High Precision &amp; Color Accuracy.
-              </p>
             </div>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-white shadow-md transition-transform duration-300 group-hover:scale-110">
               <ArrowUpRight size={16} />
@@ -526,24 +513,30 @@ function TrendingNow() {
           </div>
         </Link>
 
-        {/* Card 8: Voltra Creative Cable (Bottom Center - Small 2 Cols) */}
+        {/* Card 8: Voltra Cable (Bottom Center - Small 2 Cols) */}
         <Link
-          href="/categories/accessories"
+          href={getCardHref("voltraCable", "/categories/accessories")}
           className="group relative col-span-12 sm:col-span-4 lg:col-span-2 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#D4D7DB] p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
             src="/category/acc01.png"
-            alt="Creative Cable"
+            alt="Voltra Cable"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
-          <div /> {/* Top spacer */}
-
-          <div className="relative z-10 flex items-center justify-between">
-            <span className="font-display text-base font-extrabold text-white drop-shadow-md">
-              ${249}
+          {/* Top Right Price */}
+          <div className="relative z-10 flex items-start justify-end">
+            <span className="font-display text-xl font-extrabold text-white drop-shadow-md">
+              ${19}
             </span>
+          </div>
+
+          {/* Bottom Row with Voltra Cable title */}
+          <div className="relative z-10 flex items-center justify-between">
+            <h3 className="font-display text-base font-extrabold text-white drop-shadow-md">
+              Voltra Cable
+            </h3>
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-900/90 text-white shadow-md transition-transform duration-300 group-hover:scale-110 border border-white/20">
               <ArrowUpRight size={15} />
             </span>
@@ -552,7 +545,7 @@ function TrendingNow() {
 
         {/* Card 9: Voltra Phone 15 (Bottom Right - Wide 5 Cols, Right Aligned Text, No Logo) */}
         <Link
-          href="/categories/phones"
+          href={getCardHref("voltraPhone15", "/categories/phones")}
           className="group relative col-span-12 lg:col-span-5 flex h-56 sm:h-60 flex-col justify-between overflow-hidden rounded-3xl border border-white/70 bg-[#3A322C] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
           <img
@@ -572,9 +565,6 @@ function TrendingNow() {
               <h3 className="font-display text-lg font-extrabold text-white leading-tight">
                 Voltra Phone 15
               </h3>
-              <p className="text-[11px] font-medium text-slate-200 mt-0.5">
-                120Hz ProMotion &amp; Titanium Frame
-              </p>
             </div>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-900/90 text-white shadow-md transition-transform duration-300 group-hover:scale-110 border border-white/20">
               <ArrowUpRight size={16} />
